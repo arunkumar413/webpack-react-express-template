@@ -1,0 +1,19 @@
+{
+  "name": "webpack-react-express",
+  "version": "1.0.0",
+  "description": "a webpack,react,express template",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "react",
+    "express",
+    "webpack"
+  ],
+  "author": "Arun Kumar",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
