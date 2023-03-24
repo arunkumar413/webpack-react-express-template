@@ -4,7 +4,13 @@ const port = 3000
 
 
 const path = require('path')
-app.use('/', express.static(path.join(__dirname, '../client/dist')))
+app.use(express.static(path.join(__dirname, 'build')));
+
+
+
+app.get('/', function (req, res) {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  });
 
 app.get('/api', (req, res) => {
   res.send('Hello World!')
