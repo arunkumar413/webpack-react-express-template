@@ -2,6 +2,36 @@
 A simple template to run webpack,react and express server 
 
 
+## directory structure
+
+
+```
+├── client
+│   ├── dist
+│   │   ├── bundle.js
+│   │   ├── bundle.js.LICENSE.txt
+│   │   └── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── src
+│   │   ├── App.js
+│   │   ├── index.html
+│   │   └── index.js
+│   └── webpack.config.js
+├── LICENSE
+├── README.md
+└── server
+    ├── index.js
+    ├── package.json
+    └── package-lock.json
+
+4 directories, 14 files
+
+```
+
+
+
+
 Installation
 
 1) Clone the repo
