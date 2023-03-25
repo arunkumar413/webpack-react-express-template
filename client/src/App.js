@@ -21,7 +21,7 @@ export function App() {
       <div>
         <h1>Hello Webpack+React+Express</h1>
         <h4>count: {count}</h4>
-        <button onClick={handleIncrement}> increment</button>
+        <button onClick={handleIncrement}>increment</button>
       </div>
     </RecoilRoot>
   );
