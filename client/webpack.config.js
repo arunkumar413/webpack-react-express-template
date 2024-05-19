@@ -1,18 +1,27 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   output: {
     path: path.join(__dirname, "/dist"), // the bundle output path
-    filename: "bundle.js", // the name of the bundle
+    filename: "bundle.[contenthash].js", // the name of the bundle
+    clean: true,
+    publicPath: "/", // Ensures proper paths for assets
   },
   plugins: [
     new HtmlWebpackPlugin({
       template: "src/index.html", // to import index.html file inside index.js
     }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: "public", to: "" }, // Copies 'public' directory to 'dist'
+      ],
+    }),
   ],
   devServer: {
-    port: 3030, // you can change the port
+    port: 3031, // you can change the port
+    historyApiFallback: true, // For single-page applications
   },
   module: {
     rules: [
@@ -33,5 +42,9 @@ module.exports = {
         options: { limit: false },
       },
     ],
+  },
+  resolve: {
+    extensions: [".js", ".jsx"], // Automatically resolve certain extensions
+    modules: [path.resolve(__dirname, "src"), "node_modules"],
   },
 };
