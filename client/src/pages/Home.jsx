@@ -27,7 +27,13 @@ export function Home() {
 
   useEffect(function () {
     async function getData() {
-      let res = await fetch("http://localhost:3000/api");
+      let res = await fetch("http://localhost:3000/api", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({ a: 1, b: 2 }),
+      });
       let data = await res.json();
       console.log(data);
     }
