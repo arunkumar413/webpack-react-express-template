@@ -33,6 +33,7 @@ export function Home() {
         },
         method: "POST",
         body: JSON.stringify({ a: 1, b: 2 }),
+        credentials: "include",
       });
       let data = await res.json();
       console.log(data);
@@ -44,7 +45,10 @@ export function Home() {
     <RecoilRoot>
       <Header />
       <div className="app-component">
-        <h1>Hello Webpack+React+React router+Redux toolkit + Express</h1>
+        <h1>
+          Hello Webpack+React+React router+Redux toolkit + Express + Server side
+          session
+        </h1>
         <h4>count: {count}</h4>
         <button onClick={handleIncrement}>increment</button>
         <button onClick={handleDecrement}>decrement</button>

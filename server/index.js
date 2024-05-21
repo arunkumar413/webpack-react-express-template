@@ -30,7 +30,9 @@ const {
   login,
   loginController,
   registerController,
+  logoutController,
 } = require("./controllers/loginController");
+const { checkAuthentication } = require("./middlewares/checkAuthentication");
 
 sessionStore.on("connect", () => {
   console.log("Session store connected");
@@ -70,9 +72,10 @@ app.get("/api", (req, res) => {
   res.json({ data: "Hello World!" });
 });
 
-app.post("/api", getUsers);
+app.post("/api", checkAuthentication, getUsers);
 
 app.post("/api/login", loginController);
+app.post("/api/logout", logoutController);
 
 app.post("/api/register", registerController);
 

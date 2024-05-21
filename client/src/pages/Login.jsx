@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 import { Header } from "../components/Header";
+import useLocalStorage from "../components/useLocalStorage";
+import { useNavigate } from "react-router-dom";
 
 export function LoginPage() {
   const [userCred, setUserCred] = useState({
     email: "",
     password: "",
   });
+
+  const navigate = useNavigate();
+
   async function handleLogin() {
     let res = await fetch("http://localhost:3000/api/login", {
       method: "POST",
@@ -16,7 +21,9 @@ export function LoginPage() {
       body: JSON.stringify(userCred),
     });
     let result = await res.json();
-    console.log(result);
+    console.log(result.data);
+    localStorage.setItem("userInfo", JSON.stringify(result.data)); // set userinfo to the local storage on successful login
+    navigate("/"); //navigate to home page on sucessfull login
   }
 
   function handleUserCred(evt) {
