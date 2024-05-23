@@ -41,15 +41,29 @@ module.exports.loginController = async function (req, res) {
     );
 
     if (passwordCheckStatus === true) {
+      // get user roles
+      await client.query("BEGIN");
+
+      let queryText = `select roles.name from users 
+      join user_roles on users.id=user_roles.user_id
+      join roles on roles.id=user_roles.role_id where users.email=$1`;
+
+      let userRolesObj = await client.query(queryText, [req.body.email]);
+      await client.query("COMMIT");
+
+      let userRolesArr = userRolesObj.rows.map(function (item) {
+        return item.name;
+      });
+
       let userObj = { ...result.rows[0] };
       delete userObj.password; // remove password from userObj to store in the session
+      userObj.roles = userRolesArr;
 
       req.session.user = userObj;
       req.session.save(function (err) {
         res.json({ statusMessage: "Login success", data: userObj });
       });
     } else {
-      console.log("password check failed");
       res.status(401).send({ statusMessage: "Password didn't match" });
     }
   } catch (err) {
@@ -61,8 +75,6 @@ module.exports.loginController = async function (req, res) {
 
 module.exports.logoutController = async function (req, res) {
   req.session.destroy(function (err) {
-    console.log("###### Logout ############");
-    console.log(req.session);
     res.status(200).json({ statusMessage: "Logout success" });
   });
 };

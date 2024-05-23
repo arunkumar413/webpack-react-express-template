@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Header } from "../components/Header";
 import useLocalStorage from "../components/useLocalStorage";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { setUserInfo } from "../store/authSlice";
 
 export function LoginPage() {
   const [userCred, setUserCred] = useState({
@@ -10,6 +12,7 @@ export function LoginPage() {
   });
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   async function handleLogin() {
     let res = await fetch("http://localhost:3000/api/login", {
@@ -21,9 +24,15 @@ export function LoginPage() {
       body: JSON.stringify(userCred),
     });
     let result = await res.json();
-    console.log(result.data);
     localStorage.setItem("userInfo", JSON.stringify(result.data)); // set userinfo to the local storage on successful login
-    navigate("/"); //navigate to home page on sucessfull login
+    dispatch(
+      setUserInfo({
+        username: result.data.username,
+        email: result.data.email,
+        isLoggedIn: true,
+      })
+    );
+    // navigate("/"); //navigate to home page on sucessfull login
   }
 
   function handleUserCred(evt) {

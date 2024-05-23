@@ -1,35 +1,43 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useLocalStorage from "./useLocalStorage";
+import { useDispatch, useSelector } from "react-redux";
+import { logout, setUserInfo } from "../store/authSlice";
 
 export function Header() {
-  const [userInfo, setUserInfo] = useState({});
+  const dispatch = useDispatch();
+  const auth = useSelector((state) => state.auth);
+
+  useEffect(
+    function () {
+      let userObj = localStorage.getItem("userInfo");
+      if (userObj) {
+        let userJson = JSON.parse(userObj);
+        dispatch(
+          setUserInfo({
+            username: userJson.username,
+            email: userJson.email,
+            isLoggedIn: true,
+          })
+        );
+      }
+    },
+    [auth]
+  );
 
   useEffect(function () {
     let userObj = localStorage.getItem("userInfo");
     if (userObj) {
-      console.log(userObj);
       let userJson = JSON.parse(userObj);
-      console.log(userJson);
-      setUserInfo(userJson);
+      dispatch(
+        setUserInfo({
+          username: userJson.username,
+          email: userJson.email,
+          isLoggedIn: true,
+        })
+      );
     }
   }, []);
-
-  // useEffect(() => {
-  //   function listenForStorage() {
-  //     const item = localStorage.getItem("userInfo");
-  //     console.log("Reached effect");
-  //     if (item) {
-  //       console.log(item);
-  //       setUserInfo(JSON.parse(item));
-  //     }
-  //   }
-
-  //   window.addEventListener("localStorageChange", listenForStorage);
-  //   return () => {
-  //     window.removeEventListener("localStorageChange", listenForStorage);
-  //   };
-  // }, []);
 
   async function handleLogout() {
     let res = await fetch("http://localhost:3000/api/logout", {
@@ -42,9 +50,9 @@ export function Header() {
     });
     if (res.status === 200) {
       localStorage.removeItem("userInfo");
+      dispatch(logout());
+
       let result = await res.json();
-      console.log(result);
-      setUserInfo({});
     } else {
       console.log("logout failed");
     }
@@ -65,8 +73,8 @@ export function Header() {
         <Link to="/about"> About </Link>
         <Link to="/login"> Login </Link>
         <Link to="/register"> Register </Link>
-        {userInfo.username && <span> Logged in as {userInfo.email}</span>}
-        {userInfo.username && <span onClick={handleLogout}> Logout </span>}
+        {auth.username && <span> Logged in as {auth.email}</span>}
+        {auth.username && <button onClick={handleLogout}> Logout </button>}
       </nav>
     </header>
   );

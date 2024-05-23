@@ -33,6 +33,8 @@ const {
   logoutController,
 } = require("./controllers/loginController");
 const { checkAuthentication } = require("./middlewares/checkAuthentication");
+const { checkAuthorization } = require("./middlewares/checkAuthroization");
+const { getMyTasks } = require("./controllers/tasksController");
 
 sessionStore.on("connect", () => {
   console.log("Session store connected");
@@ -72,7 +74,15 @@ app.get("/api", (req, res) => {
   res.json({ data: "Hello World!" });
 });
 
-app.post("/api", checkAuthentication, getUsers);
+app.get(
+  "/api/mytasks",
+  checkAuthentication,
+  checkAuthorization({
+    resource: "/pets",
+    rolesWithAccess: ["VP", "QA"],
+  }),
+  getMyTasks
+);
 
 app.post("/api/login", loginController);
 app.post("/api/logout", logoutController);

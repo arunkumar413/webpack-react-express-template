@@ -1,9 +1,6 @@
 const { pool } = require("../DBConfig");
 
 module.exports.getUsers = async function (req, res) {
-  console.log(req.body);
-  console.log(req.session);
-
   const client = await pool.connect();
 
   try {
