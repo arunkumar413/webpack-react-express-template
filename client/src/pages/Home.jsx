@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import { Header } from "../components/Header";
 import { useSelector, useDispatch } from "react-redux";
 import { decrement, increment } from "../store/counterSlice";
+import { API_URL } from "../constants";
 
 export function Home() {
   const count = useSelector((state) => state.counter.value);
@@ -28,7 +29,7 @@ export function Home() {
 
   useEffect(function () {
     async function getData() {
-      let res = await fetch("http://localhost:3000/api/mytasks", {
+      let res = await fetch(`${API_URL}/mytasks`, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -70,7 +71,7 @@ export function Home() {
       <div className="app-component">
         <h1>
           Hello Webpack+React+React router+Redux toolkit + Express + Server side
-          session
+          session + RBAC
         </h1>
         <h4>count: {count}</h4>
         <button onClick={handleIncrement}>increment</button>

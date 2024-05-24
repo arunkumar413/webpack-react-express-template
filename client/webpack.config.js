@@ -1,6 +1,15 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const dotenv = require("dotenv");
+const webpack = require("webpack");
+
+const env = dotenv.config().parsed;
+
+const envKeys = Object.keys(env).reduce((prev, next) => {
+  prev[`process.env.${next}`] = JSON.stringify(env[next]);
+  return prev;
+}, {});
 
 module.exports = {
   output: {
@@ -18,6 +27,7 @@ module.exports = {
         { from: "public", to: "" }, // Copies 'public' directory to 'dist'
       ],
     }),
+    new webpack.DefinePlugin(envKeys),
   ],
   devServer: {
     port: 3031, // you can change the port
