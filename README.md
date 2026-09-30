@@ -2,7 +2,22 @@
 
 A simple template to run webpack,react and express server.
 
-Webpack+React+React router+Redux toolkit + Express + Server side session + RBAC
+## Features:
+
+*   Webpack
+*   React
+*   React router
+*   Redux toolkit
+*   Expressjs
+*   Server side
+*   session
+*   RBAC
+*   MongoDB
+*   Multiple Tenant organization
+*   Departments
+*   Roles
+*   Permission
+
 
 ## directory structure
 
