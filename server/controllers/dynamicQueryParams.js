@@ -1,10 +1,10 @@
-const User = require("../models/User");
+const Employee = require("../models/Employee");
 
-module.exports.dynamicQueryParams = async function (req, res, next) {
+module.exports.dynamicQueryParams = async function (req, res) {
   try {
     const queryParams = req.query;
     const allowedFilters = ["username", "email"];
-    const filters = {};
+    const filters = { tenantId: req.session.user.tenantId };
 
     for (const param in queryParams) {
       if (
@@ -15,10 +15,10 @@ module.exports.dynamicQueryParams = async function (req, res, next) {
       }
     }
 
-    const users = await User.find(filters).populate("roles", "name");
-    res.json(users);
+    const employees = await Employee.find(filters).select("-password");
+    res.json(employees);
   } catch (error) {
-    console.error("Error executing user query:", error);
+    console.error("Error executing employee query:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -13,10 +13,21 @@ const {
   loginController,
   registerController,
   logoutController,
+  getSessionController,
 } = require("./controllers/loginController");
 const { checkAuthentication } = require("./middlewares/checkAuthentication");
 const { checkAuthorization } = require("./middlewares/checkAuthroization");
 const { getMyTasks } = require("./controllers/tasksController");
+const {
+  getEmployees,
+  updateEmployeeDepartment,
+} = require("./controllers/userController");
+const { dynamicQueryParams } = require("./controllers/dynamicQueryParams");
+const { getHierarchy } = require("./controllers/hierarchyController");
+const {
+  getProfile,
+  updateProfile,
+} = require("./controllers/profileController");
 
 app.use(
   session({
@@ -24,7 +35,7 @@ app.use(
       mongoUrl: MONGODB_URI,
       collectionName: "sessions",
     }),
-    secret: "keyboard cat",
+    secret: process.env.SESSION_SECRET || "keyboard cat",
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false, maxAge: 30 * 24 * 60 * 60 * 1000, path: "/" },
@@ -32,8 +43,14 @@ app.use(
 );
 
 const corsOptions = {
-  origin: "http://localhost:3031",
-  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+  origin: function (origin, callback) {
+    if (!origin || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  optionsSuccessStatus: 200,
   credentials: true,
 };
 
@@ -52,14 +69,43 @@ app.get("/api", (req, res) => {
   res.json({ data: "Hello World!" });
 });
 
+app.get("/api/me", checkAuthentication, getSessionController);
+
+app.get("/api/profile", checkAuthentication, getProfile);
+app.patch("/api/profile", checkAuthentication, updateProfile);
+
+app.get(
+  "/api/hierarchy",
+  checkAuthentication,
+  checkAuthorization({ permissions: ["employee.read"] }),
+  getHierarchy
+);
+
 app.get(
   "/api/mytasks",
   checkAuthentication,
-  checkAuthorization({
-    resource: "/pets",
-    rolesWithAccess: ["VP", "QA"],
-  }),
+  checkAuthorization({ permissions: ["task.read"] }),
   getMyTasks
+);
+
+app.get(
+  "/api/employees",
+  checkAuthentication,
+  checkAuthorization({ permissions: ["employee.read"] }),
+  getEmployees
+);
+
+app.get(
+  "/api/employees/search",
+  checkAuthentication,
+  checkAuthorization({ permissions: ["employee.read"] }),
+  dynamicQueryParams
+);
+
+app.patch(
+  "/api/employees/:id/department",
+  checkAuthentication,
+  updateEmployeeDepartment
 );
 
 app.post("/api/login", loginController);

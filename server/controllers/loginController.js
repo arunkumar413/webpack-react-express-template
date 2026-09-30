@@ -1,61 +1,127 @@
 const bcrypt = require("bcrypt");
-const User = require("../models/User");
+const Employee = require("../models/Employee");
+const Organization = require("../models/Organization");
+const { slugify, buildSessionUser } = require("../utils/authSession");
+const {
+  provisionOrganization,
+  createOrgAdmin,
+} = require("../utils/organizationService");
+
+function saveSessionUser(req, sessionUser, res, status, payload) {
+  req.session.user = sessionUser;
+  req.session.save(function (err) {
+    if (err) {
+      return res.status(500).json({ statusMessage: "Session save failed" });
+    }
+    res.status(status).json(payload);
+  });
+}
 
 module.exports.registerController = async function (req, res) {
-  const saltRounds = 10;
+  const { username, email, password, organizationName } = req.body;
 
-  const salt = await bcrypt.genSalt(saltRounds);
-  const hash = await bcrypt.hash(req.body.password, salt);
+  if (!username || !email || !password) {
+    return res.status(400).json({
+      statusMessage: "username, email, and password are required",
+    });
+  }
+
+  const orgName = organizationName || `${username}'s organization`;
 
   try {
-    const user = await User.create({
-      username: req.body.username,
-      password: hash,
-      email: req.body.email,
+    const { organization, adminRole } = await provisionOrganization({
+      name: orgName,
+      allowSlugCollision: true,
     });
-    res.status(201).json(user);
+
+    const employee = await createOrgAdmin({
+      organization,
+      adminRole,
+      username,
+      email,
+      password,
+    });
+
+    const sessionUser = await buildSessionUser(employee);
+
+    saveSessionUser(req, sessionUser, res, 201, {
+      statusMessage: "Registration success",
+      data: {
+        ...sessionUser,
+        organizationSlug: organization.slug,
+        organizationName: organization.name,
+      },
+    });
   } catch (err) {
     console.log(err);
+    if (err.code === 11000) {
+      return res.status(400).json({
+        statusMessage: "Email, username, or organization already exists",
+      });
+    }
     res.status(400).json({ statusMessage: "Registration failed" });
   }
 };
 
 module.exports.loginController = async function (req, res) {
   try {
-    const user = await User.findOne({ email: req.body.email })
-      .populate("roles", "name")
-      .lean();
+    const email = (req.body.email || "").toLowerCase().trim();
+    const { password, organizationSlug } = req.body;
 
-    if (!user) {
-      return res.status(401).send({ statusMessage: "User not found" });
+    if (!email || !password) {
+      return res.status(400).json({
+        statusMessage: "email and password are required",
+      });
     }
 
-    let passwordCheckStatus = await bcrypt.compare(
-      req.body.password,
-      user.password
-    );
+    let employee;
 
-    if (passwordCheckStatus === true) {
-      let userRolesArr = user.roles.map(function (role) {
-        return role.name;
+    if (organizationSlug) {
+      const organization = await Organization.findOne({
+        slug: slugify(organizationSlug),
       });
-
-      let userObj = { ...user, id: user._id.toString() };
-      delete userObj.password; // remove password from userObj to store in the session
-      delete userObj._id;
-      delete userObj.__v;
-      userObj.roles = userRolesArr;
-
-      req.session.user = userObj;
-      req.session.save(function (err) {
-        if (err) {
-          return res.status(500).json({ statusMessage: "Session save failed" });
-        }
-        res.json({ statusMessage: "Login success", data: userObj });
+      if (!organization) {
+        return res.status(401).json({ statusMessage: "User not found" });
+      }
+      employee = await Employee.findOne({
+        tenantId: organization._id,
+        email,
+        isActive: true,
       });
     } else {
-      res.status(401).send({ statusMessage: "Password didn't match" });
+      const matches = await Employee.find({ email, isActive: true });
+      if (matches.length > 1) {
+        return res.status(400).json({
+          statusMessage: "Specify organizationSlug to choose a tenant",
+        });
+      }
+      employee = matches[0];
     }
+
+    if (!employee) {
+      return res.status(401).json({ statusMessage: "User not found" });
+    }
+
+    const passwordCheckStatus = await bcrypt.compare(
+      password,
+      employee.password
+    );
+
+    if (!passwordCheckStatus) {
+      return res.status(401).json({ statusMessage: "Password didn't match" });
+    }
+
+    const sessionUser = await buildSessionUser(employee);
+    const organization = await Organization.findById(employee.tenantId).lean();
+
+    saveSessionUser(req, sessionUser, res, 200, {
+      statusMessage: "Login success",
+      data: {
+        ...sessionUser,
+        organizationSlug: organization?.slug,
+        organizationName: organization?.name,
+      },
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ statusMessage: "Login failed" });
@@ -64,6 +130,13 @@ module.exports.loginController = async function (req, res) {
 
 module.exports.logoutController = async function (req, res) {
   req.session.destroy(function (err) {
+    if (err) {
+      return res.status(500).json({ statusMessage: "Logout failed" });
+    }
     res.status(200).json({ statusMessage: "Logout success" });
   });
+};
+
+module.exports.getSessionController = async function (req, res) {
+  res.json({ data: req.session.user });
 };

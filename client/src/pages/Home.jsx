@@ -29,16 +29,20 @@ export function Home() {
 
   useEffect(function () {
     async function getData() {
-      let res = await fetch(`${API_URL}/mytasks`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-        credentials: "include",
-      });
-      if (res.status === 200) {
-        let data = await res.json();
-        setTasks(data);
+      try {
+        let res = await fetch(`${API_URL}/mytasks`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "GET",
+          credentials: "include",
+        });
+        if (res.status === 200) {
+          let data = await res.json();
+          setTasks(data);
+        }
+      } catch (err) {
+        console.warn("Unable to load tasks", err);
       }
     }
     getData();
@@ -68,25 +72,25 @@ export function Home() {
   return (
     <RecoilRoot>
       <Header />
-      <div className="app-component">
-        <h1>
-          Hello Webpack+React+React router+Redux toolkit + Express + Server side
-          session + RBAC
-        </h1>
-        <h4>count: {count}</h4>
-        <button onClick={handleIncrement}>increment</button>
-        <button onClick={handleDecrement}>decrement</button>
-        <h2 style={{ textAlign: "center" }}> Tasks </h2>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-evenly",
-          }}
-        >
-          {taskHeadingElements}
-        </div>
-        <div>{taskElements}</div>
+      <div className="app-component px-4 py-6">
+        <h2>Features:</h2>
+        <ul>
+          <li>Webpack </li>
+          <li>React</li>
+          <li> React router</li>
+          <li> Redux toolkit </li>
+          <li> Expressjs</li>
+          <li> Server side</li>
+          <li> session</li>
+          <li> RBAC</li>
+          <li> MongoDB</li>
+          <li> Multiple Tenant organization</li>
+          <li> Departments</li>
+          <li> Roles</li>
+          <li> Permission</li>
+        </ul>
+
+
       </div>
     </RecoilRoot>
   );

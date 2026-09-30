@@ -1,13 +1,27 @@
 import React, { useState } from "react";
-import { Header } from "../components/Header";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setUserInfo } from "../store/authSlice";
+import { API_URL } from "../constants";
+import {
+  AuthButton,
+  AuthError,
+  AuthLayout,
+  TextField,
+} from "../components/AuthForm";
 
 export function RegisterUser() {
   const [userInfo, setuserInfo] = useState({
+    organizationName: "",
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   function handleUserInfo(evt) {
     setuserInfo(function (prevState) {
@@ -15,73 +29,117 @@ export function RegisterUser() {
     });
   }
 
-  async function handleRegister() {
-    let res = await fetch("http://localhost:3000/api/register", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userInfo),
-    });
+  async function handleRegister(evt) {
+    evt.preventDefault();
+    setError("");
+
+    if (userInfo.password !== userInfo.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let res = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userInfo),
+      });
+      let result = await res.json();
+      if (!res.ok || !result.data) {
+        setError(result.statusMessage || "Registration failed");
+        return;
+      }
+      localStorage.setItem("userInfo", JSON.stringify(result.data));
+      dispatch(setUserInfo(result.data));
+      navigate("/");
+    } catch (err) {
+      setError("Unable to reach the server. Try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div
-      className="RegisterUser"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "flex-start",
-        gap: "1rem",
-      }}
+    <AuthLayout
+      title="Create your workspace"
+      subtitle="Set up an organization and an admin account in one step."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link
+            className="font-medium text-slate-900 underline-offset-2 hover:underline"
+            to="/login"
+          >
+            Sign in
+          </Link>
+        </>
+      }
     >
-      <Header />
-
-      <h2> Register User</h2>
-      <div className="form-element-style">
-        <label htmlFor="username">Username</label>
-        <input
-          placeholder="username"
+      <form className="mt-8 flex flex-col gap-5" onSubmit={handleRegister}>
+        <TextField
+          id="organizationName"
+          label="Organization name"
+          name="organizationName"
+          value={userInfo.organizationName}
           onChange={handleUserInfo}
-          type="text"
+          placeholder="Acme Inc"
+          autoComplete="organization"
+          hint="Used to name your workspace and generate a URL slug."
+        />
+        <TextField
+          id="username"
+          label="Username"
           name="username"
-        />
-      </div>
-      <div className="form-element-style">
-        <label htmlFor="email">Email</label>
-
-        <input
-          placeholder="email"
+          value={userInfo.username}
           onChange={handleUserInfo}
-          type="email"
+          placeholder="jordan"
+          autoComplete="username"
+          required
+        />
+        <TextField
+          id="email"
+          label="Email"
           name="email"
-        />
-      </div>
-
-      <div className="form-element-style">
-        <label htmlFor="password">Password</label>
-
-        <input
-          placeholder="password"
+          type="email"
+          value={userInfo.email}
           onChange={handleUserInfo}
-          type="password"
-          name="password"
+          placeholder="you@company.com"
+          autoComplete="email"
+          required
         />
-      </div>
-
-      <div className="form-element-style">
-        <label htmlFor="confirmPassword">Confirm password</label>
-
-        <input
-          placeholder="confirm password"
-          onChange={handleUserInfo}
-          type="password"
-          name="confirmPassword"
-        />
-      </div>
-      <button onClick={handleRegister}>Register</button>
-    </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <TextField
+            id="password"
+            label="Password"
+            name="password"
+            type="password"
+            value={userInfo.password}
+            onChange={handleUserInfo}
+            placeholder="Create a password"
+            autoComplete="new-password"
+            required
+          />
+          <TextField
+            id="confirmPassword"
+            label="Confirm password"
+            name="confirmPassword"
+            type="password"
+            value={userInfo.confirmPassword}
+            onChange={handleUserInfo}
+            placeholder="Repeat password"
+            autoComplete="new-password"
+            required
+          />
+        </div>
+        <AuthError message={error} />
+        <AuthButton loading={loading}>
+          {loading ? "Creating account…" : "Create account"}
+        </AuthButton>
+      </form>
+    </AuthLayout>
   );
 }

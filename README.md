@@ -33,15 +33,15 @@ Webpack+React+React router+Redux toolkit + Express + Server side session + RBAC
 Installation
 
 1. Clone the repo
-2. `cd client`
-3. Create a `.env` file and set REACT_APP_API_URL=http://localhost:3000/api
-4. `npm install` to install the client dependencies
-5. `cd ../server`
-6. `npm install` to install the server dependencies
-7. Make sure MongoDB is running locally, or set `MONGODB_URI` to your MongoDB connection string.
-8. From the project root, run `npm run dev` to start the client and server in development mode.
-9. The client will be served on http://localhost:3031/ and the API will be served on http://localhost:3000/api.
-10. `npm run build` from the project root builds the client for production.
+2. Create `server/.env` with `MONGODB_URI` set to your MongoDB connection string.
+3. From the project root, run `npm install` (installs root, client, and server dependencies).
+4. Run `npm run dev` to start the API and the webpack client together.
+5. Optionally run `npm run seed:demo` to load Acme Corp with departments, roles, and employees (password `demo123`).
+6. The client is at http://localhost:3031/ and the API at http://localhost:3000/api. In development the client also proxies `/api` to the server.
+
+Optional: `client/.env` can set `REACT_APP_API_URL` (defaults to `/api`).
+
+`npm run build` from the project root builds the client for production.
 
 Installing the express server
 
@@ -61,56 +61,16 @@ Set `MONGODB_URI` to override the default local database:
 MONGODB_URI=mongodb://127.0.0.1:27017/rbac
 ```
 
-User:
+**Organization** — tenant (`name`, unique `slug`, `plan`).
 
-```js
-{
-  username: String, // required, unique
-  password: String, // required, bcrypt hash
-  email: String, // required, unique
-  roles: [ObjectId] // Role refs
-}
-```
+**Department** — `tenantId`, `name`, optional `parentId`, `ancestors` (filled on save). Index `{ tenantId, parentId }`.
 
-Role:
+**Employee** — login identity and org member. `tenantId`, `name`, unique `{ tenantId, username }` and `{ tenantId, email }`, `designation`, `phone`, hashed `password`, `departmentId`, `managerId`, `ancestorManagers`, `roleIds`, denormalized `permissions`, `isActive`. Sessions store this employee (without password) plus resolved `roles` and `permissions`. The signed-in employee’s details and org hierarchy are on `/profile` (`GET`/`PATCH /api/profile`). Department can only be changed by that employee’s manager chain (`PATCH /api/employees/:id/department`).
 
-```js
-{
-  name: String // required, unique
-}
-```
+**Role** — per-tenant (`tenantId`, unique `{ tenantId, name }`), string `permissions` (e.g. `"employee.read"`), `isSystem`.
 
-Resource:
+**RoleAssignment** — `tenantId`, `employeeId`, `roleId`, optional department `scope`.
 
-```js
-{
-  name: String, // required, unique
-  description: String
-}
-```
+**Todo** — `title`, `description`, `status` (`Pending` | `Done` | `In progress`), `tenantId`, `employee` (Employee ref).
 
-Permission:
-
-```js
-{
-  role: ObjectId, // Role ref
-  resource: ObjectId, // Resource ref
-  read: Boolean,
-  write: Boolean,
-  update: Boolean,
-  delete: Boolean
-}
-```
-
-Permission documents have a unique compound index on `role` and `resource`.
-
-Todo:
-
-```js
-{
-  title: String,
-  description: String,
-  status: "Pending" | "Done" | "In progress",
-  user: ObjectId // User ref
-}
-```
+Auth: `POST /api/register` creates an organization, an Admin role, and the first employee, then saves an Express session in MongoDB. `POST /api/login` accepts `email`, `password`, and optional `organizationSlug`. Protected routes use session cookies plus `checkAuthentication` / `checkAuthorization` (role names and/or permission strings).

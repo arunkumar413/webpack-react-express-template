@@ -18,9 +18,15 @@ const todoSchema = new mongoose.Schema(
       enum: taskStatuses,
       default: "Pending",
     },
-    user: {
+    tenantId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Organization",
+      required: true,
+      index: true,
+    },
+    employee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
       required: true,
       index: true,
     },
@@ -28,14 +34,14 @@ const todoSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+todoSchema.index({ tenantId: 1, employee: 1 });
+
 todoSchema.set("toJSON", {
   virtuals: true,
   transform(doc, ret) {
     ret.id = ret._id.toString();
-    ret.user_id = ret.user;
     delete ret._id;
     delete ret.__v;
-    delete ret.user;
     return ret;
   },
 });

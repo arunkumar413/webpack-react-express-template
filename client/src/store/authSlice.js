@@ -1,33 +1,62 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = {
+const emptyAuth = {
   username: "",
   email: "",
+  roles: [],
+  permissions: [],
   isLoggedin: false,
 };
 
+function readStoredAuth() {
+  if (typeof localStorage === "undefined") {
+    return emptyAuth;
+  }
+
+  try {
+    const raw = localStorage.getItem("userInfo");
+    if (!raw) {
+      return emptyAuth;
+    }
+
+    const user = JSON.parse(raw);
+    if (!user?.username && !user?.email) {
+      return emptyAuth;
+    }
+
+    return {
+      username: user.username || "",
+      email: user.email || "",
+      roles: user.roles || [],
+      permissions: user.permissions || [],
+      isLoggedin: true,
+    };
+  } catch {
+    return emptyAuth;
+  }
+}
+
 export const authSlice = createSlice({
   name: "auth",
-  initialState,
+  initialState: readStoredAuth(),
   reducers: {
     setUserInfo: (state, action) => {
-      // Redux Toolkit allows us to write "mutating" logic in reducers. It
-      // doesn't actually mutate the state because it uses the Immer library,
-      // which detects changes to a "draft state" and produces a brand new
-      // immutable state based off those changes
-      state.username = action.payload.username;
-      state.email = action.payload.email;
+      state.username = action.payload.username || "";
+      state.email = action.payload.email || "";
+      state.roles = action.payload.roles || [];
+      state.permissions = action.payload.permissions || [];
       state.isLoggedin = true;
     },
-    logout: function (state, action) {
+    logout: function (state) {
       state.username = "";
       state.email = "";
+      state.roles = [];
+      state.permissions = [];
       state.isLoggedin = false;
     },
   },
 });
 
-// Action creators are generated for each case reducer function
 export const { setUserInfo, logout } = authSlice.actions;
 
 export default authSlice.reducer;

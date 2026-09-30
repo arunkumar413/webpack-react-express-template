@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@layer base {
+  h1 {
+    font-size: 2em;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  h3 {
+    font-size: 1.17em;
+    font-weight: 700;
+  }
+
+  h4 {
+    font-size: 1em;
+    font-weight: 700;
+  }
+
+  h5 {
+    font-size: 0.83em;
+    font-weight: 700;
+  }
+
+  h6 {
+    font-size: 0.67em;
+    font-weight: 700;
+  }
+}
+
+body {
+  margin: 0;
+  color: #0f172a;
+}
+
