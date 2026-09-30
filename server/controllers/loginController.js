@@ -1,75 +1,64 @@
-const { pool } = require("../DBConfig");
 const bcrypt = require("bcrypt");
+const User = require("../models/User");
 
 module.exports.registerController = async function (req, res) {
   const saltRounds = 10;
-  const client = await pool.connect();
 
   const salt = await bcrypt.genSalt(saltRounds);
   const hash = await bcrypt.hash(req.body.password, salt);
 
   try {
-    await client.query("BEGIN");
-    const queryText =
-      "insert into users (username,password,email) values($1,$2,$3)";
-    const result = await client.query(queryText, [
-      req.body.username,
-      hash,
-      req.body.email,
-    ]);
-    await client.query("COMMIT");
-    res.status(201).json(result.rows);
+    const user = await User.create({
+      username: req.body.username,
+      password: hash,
+      email: req.body.email,
+    });
+    res.status(201).json(user);
   } catch (err) {
-    await client.query("ROLLBACK");
     console.log(err);
-  } finally {
+    res.status(400).json({ statusMessage: "Registration failed" });
   }
 };
 
 module.exports.loginController = async function (req, res) {
-  const client = await pool.connect();
-
   try {
-    await client.query("BEGIN");
-    const queryText = "select * from users where email=$1";
-    const result = await client.query(queryText, [req.body.email]);
-    await client.query("COMMIT");
+    const user = await User.findOne({ email: req.body.email })
+      .populate("roles", "name")
+      .lean();
+
+    if (!user) {
+      return res.status(401).send({ statusMessage: "User not found" });
+    }
 
     let passwordCheckStatus = await bcrypt.compare(
       req.body.password,
-      result.rows[0].password
+      user.password
     );
 
     if (passwordCheckStatus === true) {
-      // get user roles
-      await client.query("BEGIN");
-
-      let queryText = `select roles.name from users 
-      join user_roles on users.id=user_roles.user_id
-      join roles on roles.id=user_roles.role_id where users.email=$1`;
-
-      let userRolesObj = await client.query(queryText, [req.body.email]);
-      await client.query("COMMIT");
-
-      let userRolesArr = userRolesObj.rows.map(function (item) {
-        return item.name;
+      let userRolesArr = user.roles.map(function (role) {
+        return role.name;
       });
 
-      let userObj = { ...result.rows[0] };
+      let userObj = { ...user, id: user._id.toString() };
       delete userObj.password; // remove password from userObj to store in the session
+      delete userObj._id;
+      delete userObj.__v;
       userObj.roles = userRolesArr;
 
       req.session.user = userObj;
       req.session.save(function (err) {
+        if (err) {
+          return res.status(500).json({ statusMessage: "Session save failed" });
+        }
         res.json({ statusMessage: "Login success", data: userObj });
       });
     } else {
       res.status(401).send({ statusMessage: "Password didn't match" });
     }
   } catch (err) {
-    await client.query("ROLLBACK");
     console.log(err);
-  } finally {
+    res.status(500).json({ statusMessage: "Login failed" });
   }
 };
 

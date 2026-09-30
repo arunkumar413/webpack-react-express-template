@@ -1,5 +1,3 @@
-const { pool } = require("../DBConfig");
-
 module.exports.checkAuthorization = function (accessCheckObj) {
   return async function (req, res, next) {
     try {

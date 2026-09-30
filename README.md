@@ -35,128 +35,82 @@ Installation
 1. Clone the repo
 2. `cd client`
 3. Create a `.env` file and set REACT_APP_API_URL=http://localhost:3000/api
-4. `npm install` to install the dependencies
-5. `npm run serve` to run the app in development mode
-6. The app will be served on http://localhost:3030/
-7. `npm run build` to build the app for production
+4. `npm install` to install the client dependencies
+5. `cd ../server`
+6. `npm install` to install the server dependencies
+7. Make sure MongoDB is running locally, or set `MONGODB_URI` to your MongoDB connection string.
+8. From the project root, run `npm run dev` to start the client and server in development mode.
+9. The client will be served on http://localhost:3031/ and the API will be served on http://localhost:3000/api.
+10. `npm run build` from the project root builds the client for production.
 
 Installing the express server
 
 1. `cd server`
 2. `npm install`
-3. `node index.js` to start the server
-4. The api will be served at http://localhost:3000/api and the front end bundled app will be served at http://localhost:3000/
+3. Make sure MongoDB is running locally, or set `MONGODB_URI` to your MongoDB connection string.
+4. `node index.js` to start the server
+5. The api will be served at http://localhost:3000/api and the front end bundled app will be served at http://localhost:3000/
 
 ## DB Models:
 
-````sql
-CREATE TYPE public.task_status_enum AS ENUM (
-'Pending',
-'Done',
-'In progress'
-);```
+The server uses MongoDB with Mongoose models in `server/models`.
 
-````
+Set `MONGODB_URI` to override the default local database:
 
-users table:
-
-```sql
-
-CREATE TABLE public.users (
-    id integer serial NOT NULL,
-    username character varying(100) NOT NULL,
-    password character varying(255) NOT NULL,
-    email character varying(255) NOT NULL,
-    PRIMARY KEY (id)
-);
-
+```bash
+MONGODB_URI=mongodb://127.0.0.1:27017/rbac
 ```
 
-table user_roles:
+User:
 
-```sql
-CREATE TABLE public.user_roles (
-    user_id integer NOT NULL,
-    role_id integer NOT NULL
-);
+```js
+{
+  username: String, // required, unique
+  password: String, // required, bcrypt hash
+  email: String, // required, unique
+  roles: [ObjectId] // Role refs
+}
 ```
 
-table roles:
+Role:
 
-```sql
-CREATE TABLE public.roles (
-    id integer NOT NULL,
-    name character varying(100) NOT NULL
-);
+```js
+{
+  name: String // required, unique
+}
 ```
 
-table permissions:
+Resource:
 
-```sql
-CREATE TABLE public.permissions (
-    id integer NOT NULL,
-    role_id integer,
-    resource_id integer,
-    read boolean NOT NULL,
-    write boolean NOT NULL,
-    update boolean NOT NULL,
-    delete boolean NOT NULL
-);
+```js
+{
+  name: String, // required, unique
+  description: String
+}
 ```
 
-table resources:
+Permission:
 
-```sql
-CREATE TABLE public.resources (
-    id integer NOT NULL,
-    name character varying(100) NOT NULL,
-    description character varying(100)
-);
+```js
+{
+  role: ObjectId, // Role ref
+  resource: ObjectId, // Resource ref
+  read: Boolean,
+  write: Boolean,
+  update: Boolean,
+  delete: Boolean
+}
 ```
 
-constraints:
+Permission documents have a unique compound index on `role` and `resource`.
 
-```sql
-ALTER TABLE ONLY public.users
-	ADD CONSTRAINT unique_email UNIQUE (email);
+Todo:
 
-ALTER TABLE ONLY public.users
-	ADD CONSTRAINT users_username_key UNIQUE (username);
-
-
-ALTER TABLE ONLY public.user_roles
-	ADD CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id);
-
-
-ALTER TABLE ONLY public.user_roles
-	ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
-ALTER TABLE ONLY public.roles
-	ADD CONSTRAINT roles_name_key UNIQUE (name);
-
-ALTER TABLE ONLY public.roles
-	ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
-
-
-ALTER TABLE ONLY public.permissions
-	ADD CONSTRAINT permissions_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.permissions
-	ADD CONSTRAINT unique_permission_role_resource UNIQUE (role_id, resource_id);
-
-
-ALTER TABLE ONLY public.permissions
-	ADD CONSTRAINT permissions_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources(id);
-
-ALTER TABLE ONLY public.permissions
-	ADD CONSTRAINT permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id);
-
-
-ALTER TABLE ONLY public.resources
-	ADD CONSTRAINT resources_name_key UNIQUE (name);
-
-ALTER TABLE ONLY public.resources
-	ADD CONSTRAINT resources_pkey PRIMARY KEY (id);
-
+```js
+{
+  title: String,
+  description: String,
+  status: "Pending" | "Done" | "In progress",
+  user: ObjectId // User ref
+}
 ```

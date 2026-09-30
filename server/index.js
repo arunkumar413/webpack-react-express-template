@@ -1,33 +1,15 @@
 const express = require("express");
 var cors = require("cors");
 var session = require("express-session");
-const Knex = require("knex");
-const KnexSessionStore = require("connect-session-knex")(session);
-const { pool } = require("./DBConfig");
-
-const { getUsers } = require("./controllers/userController");
-
-const knex = Knex({
-  client: "pg",
-  connection: {
-    host: "127.0.0.1",
-    user: "postgres",
-    password: "postgres",
-    database: "rbac",
-  },
-});
-
-const sessionStore = new KnexSessionStore({
-  knex,
-  tablename: "sessions", // optional. Defaults to 'sessions'
-});
+const MongoStore = require("connect-mongo");
+const { connectDB, MONGODB_URI } = require("./DBConfig");
+const constants = require("./constants");
 
 const app = express();
-const port = 3000;
+const port = constants.SERVER_PORT
 
 const path = require("path");
 const {
-  login,
   loginController,
   registerController,
   logoutController,
@@ -36,16 +18,12 @@ const { checkAuthentication } = require("./middlewares/checkAuthentication");
 const { checkAuthorization } = require("./middlewares/checkAuthroization");
 const { getMyTasks } = require("./controllers/tasksController");
 
-sessionStore.on("connect", () => {
-  console.log("Session store connected");
-});
-sessionStore.on("disconnect", (err) => {
-  console.error("Session store disconnected", err);
-});
-
 app.use(
   session({
-    store: sessionStore,
+    store: MongoStore.create({
+      mongoUrl: MONGODB_URI,
+      collectionName: "sessions",
+    }),
     secret: "keyboard cat",
     resave: false,
     saveUninitialized: false,
@@ -93,6 +71,13 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/dist", "index.html"));
 });
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-});
+connectDB()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`Example app listening on port ${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to connect to MongoDB", err);
+    process.exit(1);
+  });

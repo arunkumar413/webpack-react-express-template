@@ -1,18 +1,11 @@
-const { pool } = require("../DBConfig");
+const User = require("../models/User");
 
 module.exports.getUsers = async function (req, res) {
-  const client = await pool.connect();
-
   try {
-    await client.query("BEGIN");
-    const queryText = "select * from users";
-    const result = await client.query(queryText);
-    await client.query("COMMIT");
-    res.json(result.rows);
+    const users = await User.find().populate("roles", "name");
+    res.json(users);
   } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
-  } finally {
-    client.release();
+    console.log(e);
+    res.status(500).json({ statusMessage: "Unable to fetch users" });
   }
 };

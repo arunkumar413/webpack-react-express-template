@@ -1,15 +1,11 @@
-const { pool } = require("../DBConfig");
+const Todo = require("../models/Todo");
 
 module.exports.getMyTasks = async function (req, res) {
-  const client = await pool.connect();
-
   try {
-    await client.query("BEGIN");
-    const queryText = "select * from  todos where user_id=$1";
-    const result = await client.query(queryText, [req.session.user.id]);
-    await client.query("COMMIT");
-    res.json(result.rows);
+    const todos = await Todo.find({ user: req.session.user.id });
+    res.json(todos);
   } catch (err) {
     console.log(err);
+    res.status(500).json({ statusMessage: "Unable to fetch tasks" });
   }
 };
