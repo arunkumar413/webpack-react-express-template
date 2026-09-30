@@ -45,7 +45,7 @@ A simple template to run webpack,react and express server.
 
 ```
 
-Installation
+## Installation
 
 1. Clone the repo
 2. Create `server/.env` with `MONGODB_URI` set to your MongoDB connection string.
@@ -58,7 +58,7 @@ Optional: `client/.env` can set `REACT_APP_API_URL` (defaults to `/api`).
 
 `npm run build` from the project root builds the client for production.
 
-Installing the express server
+## Installing the express server
 
 1. `cd server`
 2. `npm install`
