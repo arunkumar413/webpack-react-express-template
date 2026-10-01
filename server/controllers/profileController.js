@@ -2,6 +2,10 @@ const Employee = require("../models/Employee");
 const Department = require("../models/Department");
 const Organization = require("../models/Organization");
 const { buildSessionUser } = require("../utils/authSession");
+const {
+  upsertAuthSession,
+  listEmployeeSessions,
+} = require("../utils/sessionRegistry");
 
 function idString(value) {
   if (!value) {
@@ -66,6 +70,9 @@ module.exports.getProfile = async function (req, res) {
       return res.status(404).json({ statusMessage: "Employee not found" });
     }
 
+    await upsertAuthSession(req, { force: true });
+    const sessions = await listEmployeeSessions(employeeId, req.sessionID);
+
     res.json({
       data: {
         employee: serializeProfile(employee, organization),
@@ -75,6 +82,7 @@ module.exports.getProfile = async function (req, res) {
             name: department.name,
           };
         }),
+        sessions,
       },
     });
   } catch (err) {

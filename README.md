@@ -82,10 +82,12 @@ MONGODB_URI=mongodb://127.0.0.1:27017/rbac
 
 **Employee** — login identity and org member. `tenantId`, `name`, unique `{ tenantId, username }` and `{ tenantId, email }`, `designation`, `phone`, hashed `password`, `departmentId`, `managerId`, `ancestorManagers`, `roleIds`, denormalized `permissions`, `isActive`. Sessions store this employee (without password) plus resolved `roles` and `permissions`. The signed-in employee’s details and org hierarchy are on `/profile` (`GET`/`PATCH /api/profile`). Department can only be changed by that employee’s manager chain (`PATCH /api/employees/:id/department`).
 
+**AuthSession** — one record per device login (`sessionId`, `employeeId`, `userAgent`, `ip`, `lastSeenAt`, `expiresAt`). Concurrent logins from different devices stay active; `/profile` lists them.
+
 **Role** — per-tenant (`tenantId`, unique `{ tenantId, name }`), string `permissions` (e.g. `"employee.read"`), `isSystem`.
 
 **RoleAssignment** — `tenantId`, `employeeId`, `roleId`, optional department `scope`.
 
 **Todo** — `title`, `description`, `status` (`Pending` | `Done` | `In progress`), `tenantId`, `employee` (Employee ref).
 
-Auth: `POST /api/register` creates an organization, an Admin role, and the first employee, then saves an Express session in MongoDB. `POST /api/login` accepts `email`, `password`, and optional `organizationSlug`. Protected routes use session cookies plus `checkAuthentication` / `checkAuthorization` (role names and/or permission strings).
+Auth: `POST /api/register` creates an organization, an Admin role, and the first employee, then saves an Express session in MongoDB. `POST /api/login` accepts `email`, `password`, and optional `organizationSlug`. Each login creates (or updates) its own session so multiple devices can stay signed in at once. Protected routes use session cookies plus `checkAuthentication` / `checkAuthorization` (role names and/or permission strings).

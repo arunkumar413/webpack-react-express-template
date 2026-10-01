@@ -38,7 +38,11 @@ app.use(
     secret: process.env.SESSION_SECRET || "keyboard cat",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 30 * 24 * 60 * 60 * 1000, path: "/" },
+    cookie: {
+      secure: false,
+      maxAge: constants.SESSION_MAX_AGE_MS,
+      path: "/",
+    },
   })
 );
 

@@ -3,17 +3,45 @@ const Employee = require("../models/Employee");
 const Organization = require("../models/Organization");
 const { slugify, buildSessionUser } = require("../utils/authSession");
 const {
+  forgetSession,
+  upsertAuthSession,
+} = require("../utils/sessionRegistry");
+const {
   provisionOrganization,
   createOrgAdmin,
 } = require("../utils/organizationService");
 
 function saveSessionUser(req, sessionUser, res, status, payload) {
-  req.session.user = sessionUser;
-  req.session.save(function (err) {
+  const previousSid = req.sessionID;
+
+  req.session.regenerate(function (err) {
     if (err) {
       return res.status(500).json({ statusMessage: "Session save failed" });
     }
-    res.status(status).json(payload);
+
+    req.session.user = sessionUser;
+    req.session.save(function (saveErr) {
+      if (saveErr) {
+        return res.status(500).json({ statusMessage: "Session save failed" });
+      }
+
+      Promise.resolve()
+        .then(function () {
+          if (previousSid && previousSid !== req.sessionID) {
+            return forgetSession(previousSid);
+          }
+        })
+        .then(function () {
+          return upsertAuthSession(req, { force: true });
+        })
+        .then(function () {
+          res.status(status).json(payload);
+        })
+        .catch(function (registryErr) {
+          console.log(registryErr);
+          res.status(status).json(payload);
+        });
+    });
   });
 }
 
@@ -129,10 +157,14 @@ module.exports.loginController = async function (req, res) {
 };
 
 module.exports.logoutController = async function (req, res) {
+  const sessionId = req.sessionID;
   req.session.destroy(function (err) {
     if (err) {
       return res.status(500).json({ statusMessage: "Logout failed" });
     }
+    forgetSession(sessionId).catch(function (forgetErr) {
+      console.log(forgetErr);
+    });
     res.status(200).json({ statusMessage: "Logout success" });
   });
 };

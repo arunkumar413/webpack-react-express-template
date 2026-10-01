@@ -13,6 +13,17 @@ const emptyForm = {
   phone: "",
 };
 
+function formatSessionTime(value) {
+  if (!value) {
+    return "—";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  return date.toLocaleString();
+}
+
 function Detail({ label, value }) {
   return (
     <div>
@@ -38,6 +49,7 @@ export function ProfilePage() {
   const [hierarchyError, setHierarchyError] = useState("");
   const [notice, setNotice] = useState("");
   const [departmentSavingId, setDepartmentSavingId] = useState("");
+  const [sessions, setSessions] = useState([]);
 
   useEffect(function () {
     async function load() {
@@ -62,6 +74,7 @@ export function ProfilePage() {
         const nextEmployee = profileResult.data.employee;
         setEmployee(nextEmployee);
         setDepartments(profileResult.data.departments || []);
+        setSessions(profileResult.data.sessions || []);
         setForm({
           name: nextEmployee.name || "",
           username: nextEmployee.username || "",
@@ -343,6 +356,80 @@ export function ProfilePage() {
                   value={(employee.roles || []).join(", ")}
                 />
               </dl>
+            )}
+          </section>
+        )}
+
+        {employee && (
+          <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Signed-in devices
+            </h2>
+            <p className="mt-1 mb-5 text-sm text-slate-500">
+              Each device keeps its own session. You can stay signed in on more
+              than one at a time.
+            </p>
+            {sessions.length === 0 ? (
+              <p className="text-sm text-slate-500">No active sessions.</p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {sessions.map(function (session) {
+                  return (
+                    <li
+                      key={session.id}
+                      className="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0 last:pb-0"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">
+                          {session.device}
+                          {session.current ? (
+                            <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-medium text-white">
+                              This device
+                            </span>
+                          ) : null}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          IP {session.ip || "—"}
+                        </p>
+                        {session.userAgent ? (
+                          <p className="mt-1 max-w-xl text-xs leading-5 text-slate-400">
+                            {session.userAgent}
+                          </p>
+                        ) : null}
+                      </div>
+                      <dl className="grid gap-1 text-xs text-slate-500 sm:text-right">
+                        <div>
+                          <dt className="inline font-medium text-slate-600">
+                            Signed in
+                          </dt>
+                          <dd className="inline">
+                            {" "}
+                            {formatSessionTime(session.createdAt)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="inline font-medium text-slate-600">
+                            Last active
+                          </dt>
+                          <dd className="inline">
+                            {" "}
+                            {formatSessionTime(session.lastSeenAt)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="inline font-medium text-slate-600">
+                            Expires
+                          </dt>
+                          <dd className="inline">
+                            {" "}
+                            {formatSessionTime(session.expiresAt)}
+                          </dd>
+                        </div>
+                      </dl>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </section>
         )}
