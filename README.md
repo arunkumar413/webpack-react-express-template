@@ -9,14 +9,15 @@ A simple template to run webpack,react and express server.
 *   React router
 *   Redux toolkit
 *   Expressjs
-*   Server side
-*   session
+*   Server side sessions
 *   RBAC
 *   MongoDB
-*   Multiple Tenant organization
+*   Multi-tenant organization
+*   Department hierarchy
 *   Departments
 *   Roles
-*   Permission
+*   Permissions
+
 
 
 ## directory structure
