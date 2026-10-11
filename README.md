@@ -80,14 +80,18 @@ MONGODB_URI=mongodb://127.0.0.1:27017/rbac
 
 **Department** — `tenantId`, `name`, optional `parentId`, `ancestors` (filled on save). Index `{ tenantId, parentId }`.
 
-**Employee** — login identity and org member. `tenantId`, `name`, unique `{ tenantId, username }` and `{ tenantId, email }`, `designation`, `phone`, hashed `password`, `departmentId`, `managerId`, `ancestorManagers`, `roleIds`, denormalized `permissions`, `isActive`. Sessions store this employee (without password) plus resolved `roles` and `permissions`. The signed-in employee’s details and org hierarchy are on `/profile` (`GET`/`PATCH /api/profile`). Department can only be changed by that employee’s manager chain (`PATCH /api/employees/:id/department`).
+**Employee** — login identity and org member. `tenantId`, `name`, unique `{ tenantId, username }` and `{ tenantId, email }`, `designation`, `phone`, hashed `password`, `departmentId`, `managerId`, `ancestorManagers`, `roleIds`, `isActive`. Sessions store this employee (without password) plus `roles`, `roleIds`, and `fullAccess`. Resource grants are looked up per request, not stored as a giant permission list. The signed-in employee’s details and org hierarchy are on `/profile` (`GET`/`PATCH /api/profile`). Department can only be changed by that employee’s manager chain (`PATCH /api/employees/:id/department`).
 
 **AuthSession** — one record per device login (`sessionId`, `employeeId`, `userAgent`, `ip`, `lastSeenAt`, `expiresAt`). Concurrent logins from different devices stay active; `/profile` lists them.
 
-**Role** — per-tenant (`tenantId`, unique `{ tenantId, name }`), string `permissions` (e.g. `"employee.read"`), `isSystem`.
+**Resource** — global catalog of protected things (`key`, `name`, `actions`). Hundreds of resources stay as documents; they are not copied onto each role or session.
+
+**Role** — per-tenant (`tenantId`, unique `{ tenantId, name }`), `fullAccess` for admins, `isSystem`.
+
+**Permission** — grant of CRUD flags (`read`, `write`, `update`, `delete`) for one `{ role, resource }`. Indexed for lookup by role + resource so authorization stays fast as the catalog grows.
 
 **RoleAssignment** — `tenantId`, `employeeId`, `roleId`, optional department `scope`.
 
 **Todo** — `title`, `description`, `status` (`Pending` | `Done` | `In progress`), `tenantId`, `employee` (Employee ref).
 
-Auth: `POST /api/register` creates an organization, an Admin role, and the first employee, then saves an Express session in MongoDB. `POST /api/login` accepts `email`, `password`, and optional `organizationSlug`. Each login creates (or updates) its own session so multiple devices can stay signed in at once. Protected routes use session cookies plus `checkAuthentication` / `checkAuthorization` (role names and/or permission strings).
+Auth: `POST /api/register` creates an organization, an Admin role with full resource access, and the first employee, then saves an Express session in MongoDB. `POST /api/login` accepts `email`, `password`, and optional `organizationSlug`. Each login creates (or updates) its own session so multiple devices can stay signed in at once. Protected routes use session cookies plus `checkAuthentication` / `checkAuthorization({ resource, action })`. `GET /api/resources` lists the catalog with pagination (`page`, `limit`, `q`).

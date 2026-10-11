@@ -28,6 +28,7 @@ const {
   getProfile,
   updateProfile,
 } = require("./controllers/profileController");
+const { listResources } = require("./controllers/resourceController");
 
 app.use(
   session({
@@ -79,30 +80,37 @@ app.get("/api/profile", checkAuthentication, getProfile);
 app.patch("/api/profile", checkAuthentication, updateProfile);
 
 app.get(
+  "/api/resources",
+  checkAuthentication,
+  checkAuthorization({ resource: "resource", action: "read" }),
+  listResources
+);
+
+app.get(
   "/api/hierarchy",
   checkAuthentication,
-  checkAuthorization({ permissions: ["employee.read"] }),
+  checkAuthorization({ resource: "employee", action: "read" }),
   getHierarchy
 );
 
 app.get(
   "/api/mytasks",
   checkAuthentication,
-  checkAuthorization({ permissions: ["task.read"] }),
+  checkAuthorization({ resource: "task", action: "read" }),
   getMyTasks
 );
 
 app.get(
   "/api/employees",
   checkAuthentication,
-  checkAuthorization({ permissions: ["employee.read"] }),
+  checkAuthorization({ resource: "employee", action: "read" }),
   getEmployees
 );
 
 app.get(
   "/api/employees/search",
   checkAuthentication,
-  checkAuthorization({ permissions: ["employee.read"] }),
+  checkAuthorization({ resource: "employee", action: "read" }),
   dynamicQueryParams
 );
 

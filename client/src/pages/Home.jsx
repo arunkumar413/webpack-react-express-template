@@ -80,8 +80,7 @@ export function Home() {
           <li> React router</li>
           <li> Redux toolkit </li>
           <li> Expressjs</li>
-          <li> Server side</li>
-          <li> session</li>
+          <li> Serverside sessions</li>
           <li> RBAC</li>
           <li> MongoDB</li>
           <li> Multiple Tenant organization</li>

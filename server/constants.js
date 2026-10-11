@@ -1,25 +1,76 @@
-const MONGO_DB_URI = process.env.MONGO_DB_URI || 'mongodb://localhost:27017/mydatabase';
+const MONGO_DB_URI = process.env.MONGO_DB_URI || "mongodb://localhost:27017/mydatabase";
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
 const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
-const ADMIN_PERMISSIONS = [
-  "employee.read",
-  "employee.write",
-  "employee.update",
-  "employee.delete",
-  "task.read",
-  "task.write",
-  "task.update",
-  "task.delete",
-  "department.read",
-  "department.write",
-  "department.update",
-  "department.delete",
+const RESOURCE_ACTIONS = ["read", "write", "update", "delete"];
+
+const CORE_RESOURCES = [
+  {
+    key: "employee",
+    name: "Employees",
+    description: "People in the organization",
+  },
+  {
+    key: "task",
+    name: "Tasks",
+    description: "Work items and todos",
+  },
+  {
+    key: "department",
+    name: "Departments",
+    description: "Teams and department tree",
+  },
+  {
+    key: "organization",
+    name: "Organization",
+    description: "Tenant settings",
+  },
+  {
+    key: "role",
+    name: "Roles",
+    description: "Roles assigned to employees",
+  },
+  {
+    key: "resource",
+    name: "Resources",
+    description: "Protected resources and their actions",
+  },
+  {
+    key: "profile",
+    name: "Profile",
+    description: "Signed-in employee profile",
+  },
+  {
+    key: "report",
+    name: "Reports",
+    description: "Analytics and reporting",
+  },
+  {
+    key: "billing",
+    name: "Billing",
+    description: "Plans and invoices",
+  },
+  {
+    key: "document",
+    name: "Documents",
+    description: "Files and documents",
+  },
+  {
+    key: "audit",
+    name: "Audit log",
+    description: "Security and activity history",
+  },
+  {
+    key: "setting",
+    name: "Settings",
+    description: "Application configuration",
+  },
 ];
 
 module.exports = {
   MONGO_DB_URI,
   SERVER_PORT,
   SESSION_MAX_AGE_MS,
-  ADMIN_PERMISSIONS,
+  RESOURCE_ACTIONS,
+  CORE_RESOURCES,
 };

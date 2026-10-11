@@ -3,8 +3,8 @@ const Organization = require("../models/Organization");
 const Role = require("../models/Role");
 const Employee = require("../models/Employee");
 const RoleAssignment = require("../models/RoleAssignment");
-const { ADMIN_PERMISSIONS } = require("../constants");
 const { slugify } = require("./authSession");
+const { ensureCoreResources } = require("./accessControl");
 
 async function provisionOrganization({ name, slug, plan, allowSlugCollision = true }) {
   const orgName = String(name || "").trim();
@@ -31,11 +31,13 @@ async function provisionOrganization({ name, slug, plan, allowSlugCollision = tr
     plan: plan || "free",
   });
 
+  await ensureCoreResources();
+
   const adminRole = await Role.create({
     tenantId: organization._id,
     name: "Admin",
     description: "Organization administrator",
-    permissions: ADMIN_PERMISSIONS,
+    fullAccess: true,
     isSystem: true,
   });
 

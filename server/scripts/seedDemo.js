@@ -5,7 +5,12 @@ const Department = require("../models/Department");
 const Employee = require("../models/Employee");
 const Role = require("../models/Role");
 const RoleAssignment = require("../models/RoleAssignment");
-const { ADMIN_PERMISSIONS } = require("../constants");
+const Permission = require("../models/Permission");
+const {
+  ensureCoreResources,
+  setRoleResourcePermission,
+  parsePermissionString,
+} = require("../utils/accessControl");
 
 const DEMO_SLUG = "acme";
 const DEMO_PASSWORD = "demo123";
@@ -32,6 +37,28 @@ const HR_PERMISSIONS = [
   "task.read",
 ];
 
+async function grantPermissionStrings(tenantId, roleId, permissionStrings) {
+  const byResource = new Map();
+  for (const value of permissionStrings) {
+    const parsed = parsePermissionString(value);
+    if (!parsed) {
+      continue;
+    }
+    const actions = byResource.get(parsed.resource) || [];
+    actions.push(parsed.action);
+    byResource.set(parsed.resource, actions);
+  }
+
+  for (const [resourceKey, actions] of byResource.entries()) {
+    await setRoleResourcePermission({
+      tenantId,
+      roleId,
+      resourceKey,
+      actions,
+    });
+  }
+}
+
 async function clearDemoOrg() {
   const existing = await Organization.findOne({ slug: DEMO_SLUG });
   if (!existing) {
@@ -39,6 +66,7 @@ async function clearDemoOrg() {
   }
 
   const tenantId = existing._id;
+  await Permission.deleteMany({ tenantId });
   await RoleAssignment.deleteMany({ tenantId });
   await Employee.deleteMany({ tenantId });
   await Department.deleteMany({ tenantId });
@@ -64,6 +92,7 @@ async function assignRole(tenantId, employee, role) {
 async function seed() {
   await connectDB();
   await clearDemoOrg();
+  await ensureCoreResources();
 
   const password = await hashPassword();
   const organization = await Organization.create({
@@ -78,28 +107,29 @@ async function seed() {
       tenantId,
       name: "Admin",
       description: "Organization administrator",
-      permissions: ADMIN_PERMISSIONS,
+      fullAccess: true,
       isSystem: true,
     },
     {
       tenantId,
       name: "Manager",
       description: "Department or team manager",
-      permissions: MANAGER_PERMISSIONS,
     },
     {
       tenantId,
       name: "Employee",
       description: "Standard team member",
-      permissions: EMPLOYEE_PERMISSIONS,
     },
     {
       tenantId,
       name: "HR",
       description: "People operations",
-      permissions: HR_PERMISSIONS,
     },
   ]);
+
+  await grantPermissionStrings(tenantId, managerRole._id, MANAGER_PERMISSIONS);
+  await grantPermissionStrings(tenantId, employeeRole._id, EMPLOYEE_PERMISSIONS);
+  await grantPermissionStrings(tenantId, hrRole._id, HR_PERMISSIONS);
 
   const engineering = await Department.create({
     tenantId,

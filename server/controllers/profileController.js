@@ -6,6 +6,7 @@ const {
   upsertAuthSession,
   listEmployeeSessions,
 } = require("../utils/sessionRegistry");
+const { listGrantsForRoles } = require("../utils/accessControl");
 
 function idString(value) {
   if (!value) {
@@ -72,6 +73,10 @@ module.exports.getProfile = async function (req, res) {
 
     await upsertAuthSession(req, { force: true });
     const sessions = await listEmployeeSessions(employeeId, req.sessionID);
+    const fullAccess = Boolean(req.session.user.fullAccess);
+    const grants = fullAccess
+      ? []
+      : await listGrantsForRoles(req.session.user.roleIds || []);
 
     res.json({
       data: {
@@ -83,6 +88,10 @@ module.exports.getProfile = async function (req, res) {
           };
         }),
         sessions,
+        access: {
+          fullAccess,
+          grants,
+        },
       },
     });
   } catch (err) {

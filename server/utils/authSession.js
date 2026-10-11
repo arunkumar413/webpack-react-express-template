@@ -41,19 +41,22 @@ async function resolveAccess(employee) {
     tenantId: employee.tenantId,
   }).lean();
 
-  const permissions = new Set(employee.permissions || []);
   const roleNames = [];
+  const resolvedRoleIds = [];
+  let fullAccess = false;
 
   for (const role of roles) {
     roleNames.push(role.name);
-    for (const permission of role.permissions || []) {
-      permissions.add(permission);
+    resolvedRoleIds.push(role._id.toString());
+    if (role.fullAccess || (role.isSystem && role.name === "Admin")) {
+      fullAccess = true;
     }
   }
 
   return {
     roles: roleNames,
-    permissions: [...permissions],
+    roleIds: resolvedRoleIds,
+    fullAccess,
   };
 }
 
@@ -67,7 +70,8 @@ function toSessionUser(employee, access) {
     departmentId: idString(employee.departmentId),
     isActive: employee.isActive,
     roles: access.roles,
-    permissions: access.permissions,
+    roleIds: access.roleIds || [],
+    fullAccess: Boolean(access.fullAccess),
   };
 }
 

@@ -70,12 +70,6 @@ const employeeSchema = new mongoose.Schema(
       },
     ],
 
-    permissions: [
-      {
-        type: String,
-      },
-    ],
-
     isActive: {
       type: Boolean,
       default: true,
