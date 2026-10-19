@@ -57,7 +57,26 @@ A simple template to run webpack,react and express server.
 
 Optional: `client/.env` can set `REACT_APP_API_URL` (defaults to `/api`).
 
-`npm run build` from the project root builds the client for production.
+`npm run build` from the project root builds the client for production. Then `NODE_ENV=production npm start` serves the UI and API together.
+
+## Deploy to Cloud Run
+
+Google puts HTTPS in front of the app. There is no Dockerfile and no App Engine `app.yaml`.
+
+1. Use MongoDB Atlas. Allow `0.0.0.0/0` (Cloud Run has no fixed IP) or later use VPC.
+2. Install the [gcloud CLI](https://cloud.google.com/sdk/docs/install), then:
+   ```bash
+   gcloud init
+   gcloud run deploy webpack-react-express \
+     --source . \
+     --region us-central1 \
+     --allow-unauthenticated \
+     --set-env-vars=NODE_ENV=production,MONGODB_URI="your-atlas-uri",SESSION_SECRET="a-long-random-string"
+   ```
+3. Optional: add `APP_ORIGIN=https://YOUR-SERVICE-xxxxx.run.app` and SMTP vars to `--set-env-vars`.
+4. Seed once from your laptop: `MONGODB_URI="your-atlas-uri" npm run seed:demo`
+
+Local `npm run dev` is unchanged.
 
 ## Installing the express server
 

@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 var cors = require("cors");
 var session = require("express-session");
@@ -6,9 +7,34 @@ const { connectDB, MONGODB_URI } = require("./DBConfig");
 const constants = require("./constants");
 
 const app = express();
-const port = constants.SERVER_PORT
+const port = constants.SERVER_PORT;
+const isProduction = process.env.NODE_ENV === "production";
+const clientDist = path.join(__dirname, "../client/dist");
 
-const path = require("path");
+function isAllowedOrigin(origin) {
+  if (!origin) {
+    return true;
+  }
+  if (/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+    return true;
+  }
+  const extra = String(process.env.APP_ORIGIN || "")
+    .split(",")
+    .map(function (value) {
+      return value.trim();
+    })
+    .filter(Boolean);
+  if (extra.includes(origin)) {
+    return true;
+  }
+  try {
+    const url = new URL(origin);
+    return url.protocol === "https:" && url.hostname.endsWith(".run.app");
+  } catch (err) {
+    return false;
+  }
+}
+
 const {
   loginController,
   registerController,
@@ -38,6 +64,10 @@ const {
   changePassword,
 } = require("./controllers/passwordController");
 
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
+
 app.use(
   session({
     store: MongoStore.create({
@@ -48,7 +78,8 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false,
+      secure: isProduction,
+      sameSite: "lax",
       maxAge: constants.SESSION_MAX_AGE_MS,
       path: "/",
     },
@@ -57,7 +88,7 @@ app.use(
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
@@ -70,11 +101,10 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.static(path.join(__dirname, "../client/dist")));
+app.use(express.static(clientDist));
 
 app.get("/", function (req, res) {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+  res.sendFile(path.join(clientDist, "index.html"));
 });
 
 app.get("/api", (req, res) => {
@@ -148,12 +178,20 @@ app.post("/api/invite/accept", acceptInvite);
 app.post("/api/register", registerController);
 
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/dist", "index.html"));
+  res.sendFile(path.join(clientDist, "index.html"));
 });
+
+if (
+  isProduction &&
+  (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === "keyboard cat")
+) {
+  console.error("Set SESSION_SECRET before starting in production");
+  process.exit(1);
+}
 
 connectDB()
   .then(() => {
-    app.listen(port, () => {
+    app.listen(port, "0.0.0.0", () => {
       console.log(`Example app listening on port ${port}`);
     });
   })

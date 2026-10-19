@@ -1,5 +1,5 @@
 const MONGO_DB_URI = process.env.MONGO_DB_URI || "mongodb://localhost:27017/mydatabase";
-const SERVER_PORT = process.env.SERVER_PORT || 3000;
+const SERVER_PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const PASSWORD_OTP_TTL_MS = 10 * 60 * 1000;
 const PASSWORD_OTP_RESEND_MS = 60 * 1000;

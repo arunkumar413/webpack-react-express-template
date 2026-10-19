@@ -2,6 +2,9 @@
   "name": "webpack-react-express-template",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "postinstall": "npm --prefix client install && npm --prefix server install",
     "predev": "node scripts/free-dev-ports.js",
@@ -10,6 +13,7 @@
     "dev:server": "npm --prefix server run dev",
     "seed:demo": "npm --prefix server run seed:demo",
     "build": "npm --prefix client run build",
+    "gcp-build": "npm --prefix client install --include=dev && npm --prefix client run build",
     "start": "npm --prefix server start"
   },
   "devDependencies": {
