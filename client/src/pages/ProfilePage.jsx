@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Header } from "../components/Header";
 import { ChangePassword } from "../components/ChangePassword";
 import { InviteTeam } from "../components/InviteTeam";
+import { GrantAccess } from "../components/GrantAccess";
 import { OrgHierarchy } from "../components/OrgHierarchy";
 import { setUserInfo } from "../store/authSlice";
 import { API_URL } from "../constants";
@@ -379,6 +380,8 @@ export function ProfilePage() {
             })) && (
             <InviteTeam departmentName={employee.departmentName} />
           )}
+
+        {employee && GrantAccess.canManageAccess(access) && <GrantAccess />}
 
         {employee && (
           <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -60,6 +60,11 @@ const {
 } = require("./controllers/profileController");
 const { listResources } = require("./controllers/resourceController");
 const {
+  getAccessCatalog,
+  updateRoleResource,
+  setMemberRole,
+} = require("./controllers/accessController");
+const {
   requestPasswordOtp,
   changePassword,
 } = require("./controllers/passwordController");
@@ -128,6 +133,25 @@ app.get(
   checkAuthentication,
   checkAuthorization({ resource: "resource", action: "read" }),
   listResources
+);
+
+app.get(
+  "/api/access",
+  checkAuthentication,
+  checkAuthorization({ resource: "role", action: "read" }),
+  getAccessCatalog
+);
+app.patch(
+  "/api/access/roles/:roleId",
+  checkAuthentication,
+  checkAuthorization({ resource: "role", action: "update" }),
+  updateRoleResource
+);
+app.put(
+  "/api/access/members/:employeeId/role",
+  checkAuthentication,
+  checkAuthorization({ resource: "employee", action: "update" }),
+  setMemberRole
 );
 
 app.get(
