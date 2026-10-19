@@ -22,6 +22,10 @@ const {
   getEmployees,
   updateEmployeeDepartment,
 } = require("./controllers/userController");
+const {
+  bulkInviteEmployees,
+  acceptInvite,
+} = require("./controllers/inviteController");
 const { dynamicQueryParams } = require("./controllers/dynamicQueryParams");
 const { getHierarchy } = require("./controllers/hierarchyController");
 const {
@@ -29,6 +33,10 @@ const {
   updateProfile,
 } = require("./controllers/profileController");
 const { listResources } = require("./controllers/resourceController");
+const {
+  requestPasswordOtp,
+  changePassword,
+} = require("./controllers/passwordController");
 
 app.use(
   session({
@@ -78,6 +86,12 @@ app.get("/api/me", checkAuthentication, getSessionController);
 
 app.get("/api/profile", checkAuthentication, getProfile);
 app.patch("/api/profile", checkAuthentication, updateProfile);
+app.post(
+  "/api/profile/password/otp",
+  checkAuthentication,
+  requestPasswordOtp
+);
+app.post("/api/profile/password", checkAuthentication, changePassword);
 
 app.get(
   "/api/resources",
@@ -107,6 +121,13 @@ app.get(
   getEmployees
 );
 
+app.post(
+  "/api/employees/invite",
+  checkAuthentication,
+  checkAuthorization({ resource: "employee", action: "write" }),
+  bulkInviteEmployees
+);
+
 app.get(
   "/api/employees/search",
   checkAuthentication,
@@ -122,6 +143,7 @@ app.patch(
 
 app.post("/api/login", loginController);
 app.post("/api/logout", logoutController);
+app.post("/api/invite/accept", acceptInvite);
 
 app.post("/api/register", registerController);
 

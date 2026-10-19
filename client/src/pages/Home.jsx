@@ -74,7 +74,7 @@ export function Home() {
       <Header />
       <div className="app-component px-4 py-6">
         <h2>Features:</h2>
-        <ul>
+        <ol>
           <li>Webpack </li>
           <li>React</li>
           <li> React router</li>
@@ -86,8 +86,12 @@ export function Home() {
           <li> Multiple Tenant organization</li>
           <li> Departments</li>
           <li> Roles</li>
-          <li> Permission</li>
-        </ul>
+          <li> Permissions</li>
+          <li> Change password
+            
+          </li>
+
+        </ol>
 
 
       </div>

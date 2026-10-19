@@ -17,6 +17,7 @@ const DEMO_PASSWORD = "demo123";
 
 const MANAGER_PERMISSIONS = [
   "employee.read",
+  "employee.write",
   "task.read",
   "task.write",
   "task.update",

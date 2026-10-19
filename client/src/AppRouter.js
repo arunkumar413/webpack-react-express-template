@@ -4,6 +4,7 @@ import { About } from "./pages/About";
 import { Contact } from "./pages/Contact";
 import { Home } from "./pages/Home";
 import { LoginPage } from "./pages/Login";
+import { AcceptInvite } from "./pages/AcceptInvite";
 import { RegisterUser } from "./pages/RegisterUser";
 import { GuestOnly } from "./components/GuestOnly";
 import { RequireAuth } from "./components/RequireAuth";
@@ -33,6 +34,14 @@ export const AppRouter = createBrowserRouter([
   {
     path: "/contact",
     element: <Contact />,
+  },
+  {
+    path: "/invite",
+    element: (
+      <GuestOnly>
+        <AcceptInvite />
+      </GuestOnly>
+    ),
   },
   {
     path: "/login",

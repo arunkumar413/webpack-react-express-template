@@ -124,6 +124,24 @@ async function listEmployeeSessions(employeeId, currentSessionId) {
   });
 }
 
+async function revokeOtherSessions(employeeId, keepSessionId, sessionStore) {
+  const others = await AuthSession.find({
+    employeeId,
+    sessionId: { $ne: keepSessionId },
+  }).lean();
+
+  for (const doc of others) {
+    if (sessionStore && typeof sessionStore.destroy === "function") {
+      await new Promise(function (resolve) {
+        sessionStore.destroy(doc.sessionId, function () {
+          resolve();
+        });
+      });
+    }
+    await forgetSession(doc.sessionId);
+  }
+}
+
 function touchAuthSession(req) {
   upsertAuthSession(req).catch(function (err) {
     console.log(err);
@@ -136,5 +154,6 @@ module.exports = {
   forgetSession,
   upsertAuthSession,
   listEmployeeSessions,
+  revokeOtherSessions,
   touchAuthSession,
 };

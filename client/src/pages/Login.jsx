@@ -70,6 +70,13 @@ export function LoginPage() {
           >
             Create one
           </Link>
+          {" · "}
+          <Link
+            className="font-medium text-slate-900 underline-offset-2 hover:underline"
+            to="/invite"
+          >
+            Accept invite
+          </Link>
         </>
       }
     >

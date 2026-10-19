@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Header } from "../components/Header";
+import { ChangePassword } from "../components/ChangePassword";
+import { InviteTeam } from "../components/InviteTeam";
 import { OrgHierarchy } from "../components/OrgHierarchy";
 import { setUserInfo } from "../store/authSlice";
 import { API_URL } from "../constants";
@@ -363,6 +365,20 @@ export function ProfilePage() {
             )}
           </section>
         )}
+
+        {employee && <ChangePassword email={employee.email} />}
+
+        {employee &&
+          employee.departmentId &&
+          (access.fullAccess ||
+            (access.grants || []).some(function (grant) {
+              return (
+                grant.key === "employee" &&
+                (grant.actions || []).includes("write")
+              );
+            })) && (
+            <InviteTeam departmentName={employee.departmentName} />
+          )}
 
         {employee && (
           <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

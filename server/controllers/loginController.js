@@ -130,6 +130,13 @@ module.exports.loginController = async function (req, res) {
       return res.status(401).json({ statusMessage: "User not found" });
     }
 
+    if (employee.mustSetPassword) {
+      return res.status(403).json({
+        statusMessage:
+          "Set your password using the invite code sent to your email",
+      });
+    }
+
     const passwordCheckStatus = await bcrypt.compare(
       password,
       employee.password
