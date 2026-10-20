@@ -6,6 +6,11 @@ const MongoStore = require("connect-mongo");
 const { connectDB, MONGODB_URI } = require("./DBConfig");
 const constants = require("./constants");
 
+const pinoHttp = require('pino-http');
+const pino = require('pino')
+const logger = require('./logger');
+const crypto = require('node:crypto');
+
 const app = express();
 const port = constants.SERVER_PORT;
 const isProduction = process.env.NODE_ENV === "production";
@@ -68,6 +73,7 @@ const {
   requestPasswordOtp,
   changePassword,
 } = require("./controllers/passwordController");
+const errorHandler = require("./middlewares/errorHandlerMiddleware");
 
 if (isProduction) {
   app.set("trust proxy", 1);
@@ -106,11 +112,60 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
+app.use(pinoHttp({
+  logger,
+  genReqId: () => crypto.randomUUID(),
+  customProps: (req,res) => ({
+    query: req.query,
+    params: req.params,
+    body: req.body,
+    // headers: req.headers,
+    ip: req.ip,
+    // method: req.method,
+    // url: req.url,
+    // statusCode: res.statusCode,
+    // responseTime: res.responseTime,
+  }),
+  serializers: {
+    err: pino.stdSerializers.err,
+    // req: pino.stdSerializers.req,
+    // res: pino.stdSerializers.res
+
+    req(req) {
+      return {
+        id: req.id,
+        method: req.method,
+        url: req.url,
+        remoteAddress: req.remoteAddress,
+        remotePort: req.remotePort
+      };
+    },
+    // res(res) {  
+    //   return {
+    //     statusCode: res.statusCode,
+    //     responseTime: res.responseTime
+    //   };
+    // }
+  },
+}));
+
+
+// app.get('/', async (req, res, next) => {
+//   try {
+//     throw new Error('Error to simulate');
+//   } catch (err) {
+//     next(err);
+//   }
+// });
+
 app.use(express.static(clientDist));
 
 app.get("/", function (req, res) {
   res.sendFile(path.join(clientDist, "index.html"));
 });
+
 
 app.get("/api", (req, res) => {
   console.log(req);
@@ -204,6 +259,8 @@ app.post("/api/register", registerController);
 app.get("*", (req, res) => {
   res.sendFile(path.join(clientDist, "index.html"));
 });
+
+app.use(errorHandler);
 
 if (
   isProduction &&
