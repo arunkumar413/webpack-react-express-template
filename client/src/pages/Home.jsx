@@ -10,6 +10,15 @@ const features = [
   ["04", "An account you control", "Keep your profile current, change your password, and see your signed-in devices."],
 ];
 
+const templateFeatures = [
+  "React and React Router frontend",
+  "Webpack development and production builds",
+  "Express API with MongoDB and Mongoose",
+  "Session-based authentication and protected routes",
+  "Organizations, departments, employees, roles, and permissions",
+  "CSV team invites and password recovery",
+];
+
 export function Home() {
   const signedIn = useSelector((state) => state.auth.isLoggedin);
   return (
@@ -32,6 +41,23 @@ export function Home() {
               <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{description}</p>
             </article>
           ))}
+        </section>
+        <section aria-labelledby="template-features-title" className="mt-5 rounded-2xl border border-slate-200 bg-surface p-7 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary">Built for a fast start</p>
+              <h2 id="template-features-title" className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Everything this template includes</h2>
+            </div>
+            <p className="max-w-sm text-sm leading-6 text-slate-500">A practical foundation for building an internal team workspace.</p>
+          </div>
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {templateFeatures.map((feature) => (
+              <li key={feature} className="flex items-start gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+                <span aria-hidden="true" className="mt-0.5 text-primary">✓</span>
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       </main>
     </div>
