@@ -3,7 +3,7 @@ import React from "react";
 function RoleBadges({ roles, inverted }) {
   if (!roles || roles.length === 0) {
     return (
-      <span className={inverted ? "text-xs text-slate-300" : "text-xs text-slate-400"}>
+      <span className={inverted ? "text-xs text-white/80" : "text-xs text-slate-400"}>
         No role
       </span>
     );
@@ -42,7 +42,7 @@ function PersonRow({
     <div
       className={
         "flex flex-wrap items-center justify-between gap-2 rounded-lg px-2 py-1.5 " +
-        (isYou ? "bg-slate-900 text-white" : "bg-slate-50")
+        (isYou ? "bg-primary text-white" : "bg-slate-50")
       }
     >
       <div className="min-w-0">
@@ -50,16 +50,16 @@ function PersonRow({
           {person.name}
           {isYou ? " (you)" : ""}
         </p>
-        <p className={"text-xs " + (isYou ? "text-slate-300" : "text-slate-500")}>
+        <p className={"text-xs " + (isYou ? "text-white/80" : "text-slate-500")}>
           {[person.designation, person.email].filter(Boolean).join(" · ")}
         </p>
         {person.canChangeDepartment ? (
           <label className="mt-2 block text-xs">
-            <span className={isYou ? "text-slate-300" : "text-slate-500"}>
+            <span className={isYou ? "text-white/80" : "text-slate-500"}>
               Department
             </span>
             <select
-              className="mt-1 w-full max-w-xs rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800"
+              className="mt-1 w-full max-w-xs rounded border border-slate-300 bg-surface px-2 py-1 text-xs text-slate-800"
               value={person.departmentId || ""}
               disabled={savingId === person.id}
               onChange={function (evt) {
@@ -78,7 +78,7 @@ function PersonRow({
           </label>
         ) : (
           person.departmentName && (
-            <p className={"mt-1 text-xs " + (isYou ? "text-slate-400" : "text-slate-400")}>
+            <p className={"mt-1 text-xs " + (isYou ? "text-white/80" : "text-slate-400")}>
               {person.departmentName}
             </p>
           )
@@ -137,7 +137,7 @@ export function OrgHierarchy({
 
   return (
     <>
-      <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-8 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
         <p className="text-sm font-medium text-slate-500">Organization</p>
         <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
           {data.organization.name}
@@ -150,7 +150,7 @@ export function OrgHierarchy({
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900">Departments</h3>
           <p className="mt-1 mb-5 text-sm text-slate-500">
             Teams and the people in each one. Managers can move their reports.
@@ -192,7 +192,7 @@ export function OrgHierarchy({
           )}
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900">Reporting line</h3>
           <p className="mt-1 mb-5 text-sm text-slate-500">Who reports to whom.</p>
           <TreeList

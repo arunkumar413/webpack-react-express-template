@@ -117,3 +117,16 @@ MONGODB_URI=mongodb://127.0.0.1:27017/rbac
 **Todo** — `title`, `description`, `status` (`Pending` | `Done` | `In progress`), `tenantId`, `employee` (Employee ref).
 
 Auth: `POST /api/register` creates an organization, an Admin role with full resource access, and the first employee, then saves an Express session in MongoDB. `POST /api/login` accepts `email`, `password`, and optional `organizationSlug`. Each login creates (or updates) its own session so multiple devices can stay signed in at once. Change password on `/profile`: `POST /api/profile/password/otp` emails a 6-digit code, then `POST /api/profile/password` with `otp`, `password`, and `confirmPassword`. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM` (or `SMTP_URL`) to send mail; without SMTP the code is written to the server log. Protected routes use session cookies plus `checkAuthentication` / `checkAuthorization({ resource, action })`. `GET /api/resources` lists the catalog with pagination (`page`, `limit`, `q`).
+
+## UI theme
+
+The UI uses Inter (loaded through Google Fonts, with system-font fallbacks) and
+Tailwind CSS v4. Shared color tokens live in `client/src/index.css`: edit the
+`:root` values for light mode and `[data-theme="dark"]` for dark mode. Tailwind's
+`@theme inline` exposes `primary`, `primary-hover`, and `surface` utilities and
+maps the existing slate utilities to the active palette.
+
+The header offers Light, Dark, and System themes. The selection is saved locally;
+System follows the device preference, including changes while the app is open.
+An early script in `client/src/index.html` applies the saved preference before
+React renders to avoid a flash of the wrong theme.

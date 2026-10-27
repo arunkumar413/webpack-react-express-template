@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, setUserInfo } from "../store/authSlice";
+import { ThemeSelect } from "./ThemeSelect";
 import { API_URL } from "../constants";
 
 export function Header() {
@@ -41,8 +42,8 @@ export function Header() {
   }
 
   return (
-    <header className="border-b border-slate-200 bg-white">
-      <nav className="mx-auto flex max-w-5xl flex-row flex-wrap items-center justify-start gap-4 px-4 py-3">
+    <header className="border-b border-slate-200 bg-surface">
+      <nav className="mx-auto flex max-w-6xl flex-row flex-wrap items-center justify-start gap-4 px-4 py-4">
         <Link className="text-slate-700 hover:text-slate-900" to="/">
           Home
         </Link>
@@ -72,12 +73,13 @@ export function Header() {
         )}
         {auth.username && (
           <button
-            className="rounded bg-slate-800 px-3 py-1 text-sm text-white hover:bg-slate-700"
+            className="rounded bg-primary px-3 py-1 text-sm text-white hover:bg-primary-hover"
             onClick={handleLogout}
           >
             Logout
           </button>
         )}
+        <ThemeSelect />
       </nav>
     </header>
   );

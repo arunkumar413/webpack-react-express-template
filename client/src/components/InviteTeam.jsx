@@ -147,7 +147,7 @@ export function InviteTeam({ departmentName }) {
   }
 
   return (
-    <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="mb-10 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">Invite teammates</h2>
       <p className="mt-1 mb-5 text-sm text-slate-500">
         Upload a CSV of people to add to{" "}
@@ -223,7 +223,7 @@ export function InviteTeam({ departmentName }) {
       <button
         type="button"
         disabled={sending || rows.length === 0}
-        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-60"
         onClick={handleInvite}
       >
         {sending

@@ -1,16 +1,1 @@
-
-
-input {
-  padding: 0.5rem;
-}
-
-button {
-  padding: 0.5rem;
-}
-
-.form-element-style {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.5rem;
-}
+/* Shared styles are bundled from src/index.css. */

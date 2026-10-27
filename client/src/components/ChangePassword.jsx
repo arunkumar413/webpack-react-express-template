@@ -73,7 +73,7 @@ export function ChangePassword({ email }) {
   }
 
   return (
-    <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="mb-10 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">Change password</h2>
       <p className="mt-1 mb-5 text-sm text-slate-500">
         We send a 6-digit code to {email || "your email"}. Enter it with your
@@ -150,7 +150,7 @@ export function ChangePassword({ email }) {
         <button
           type="submit"
           disabled={saving}
-          className="w-fit rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+          className="w-fit rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-60"
         >
           {saving ? "Updating…" : "Update password"}
         </button>

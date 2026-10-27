@@ -1,100 +1,39 @@
-import React, { useEffect, useState } from "react";
-import {
-  RecoilRoot,
-  atom,
-  selector,
-  useRecoilState,
-  useRecoilValue,
-} from "recoil";
-
-import "../app.css";
+import React from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { Header } from "../components/Header";
-import { useSelector, useDispatch } from "react-redux";
-import { decrement, increment } from "../store/counterSlice";
-import { API_URL } from "../constants";
+
+const features = [
+  ["01", "Your organization, connected", "Bring departments, people, and reporting lines together in one clear view."],
+  ["02", "Access that makes sense", "Manage roles and resource permissions so everyone has the access they need."],
+  ["03", "A smoother welcome", "Invite teammates from a CSV and help them get started with a personal invite code."],
+  ["04", "An account you control", "Keep your profile current, change your password, and see your signed-in devices."],
+];
 
 export function Home() {
-  const count = useSelector((state) => state.counter.value);
-  const dispatch = useDispatch();
-  const [tasks, setTasks] = useState([]);
-
-  function handleIncrement() {
-    dispatch(increment());
-  }
-
-  function handleDecrement() {
-    dispatch(decrement());
-  }
-
-  useEffect(function () {
-    async function getData() {
-      try {
-        let res = await fetch(`${API_URL}/mytasks`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          method: "GET",
-          credentials: "include",
-        });
-        if (res.status === 200) {
-          let data = await res.json();
-          setTasks(data);
-        }
-      } catch (err) {
-        console.warn("Unable to load tasks", err);
-      }
-    }
-    getData();
-  }, []);
-
-  const taskElements = tasks.map(function (item, index) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-evenly",
-          gap: "1rem",
-        }}
-        key={index.toString()}
-      >
-        <span style={{ padding: "0.5rem" }}> {item.title}</span>
-        <span> {item.status}</span>
-      </div>
-    );
-  });
-
-  const taskHeadingElements = ["Title", "Status"].map(function (item, index) {
-    return <h5 key={item}> {item}</h5>;
-  });
-
+  const signedIn = useSelector((state) => state.auth.isLoggedin);
   return (
-    <RecoilRoot>
+    <div className="min-h-screen bg-slate-50">
       <Header />
-      <div className="app-component px-4 py-6">
-        <h2>Features:</h2>
-        <ol>
-          <li>Webpack </li>
-          <li>React</li>
-          <li> React router</li>
-          <li> Redux toolkit </li>
-          <li> Expressjs</li>
-          <li> Serverside sessions</li>
-          <li> RBAC</li>
-          <li> MongoDB</li>
-          <li> Multiple Tenant organization</li>
-          <li> Departments</li>
-          <li> Roles</li>
-          <li> Permissions</li>
-          <li> Change password
-            
-          </li>
-
-        </ol>
-
-
-      </div>
-    </RecoilRoot>
+      <main className="mx-auto max-w-6xl px-4 py-12 sm:py-20">
+        <section className="max-w-2xl">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-primary">A little more organized</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">A shared space for<br />your people and teams.</h1>
+          <p className="mt-5 max-w-xl text-base leading-7 text-slate-500">Less administration, more clarity. Keep your organization connected with thoughtful tools for people, permissions, and everyday work.</p>
+          <Link className="mt-8 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-primary-hover" to={signedIn ? "/profile" : "/register"}>
+            {signedIn ? "Open your workspace" : "Create your workspace"}<span aria-hidden="true" className="ml-3">→</span>
+          </Link>
+        </section>
+        <section aria-label="Workspace features" className="mt-14 grid gap-5 sm:grid-cols-2">
+          {features.map(([number, title, description]) => (
+            <article key={number} className="rounded-2xl border border-slate-200 bg-surface p-7 shadow-sm">
+              <span className="mb-5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-xs font-semibold text-primary">{number}</span>
+              <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+              <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{description}</p>
+            </article>
+          ))}
+        </section>
+      </main>
+    </div>
   );
 }

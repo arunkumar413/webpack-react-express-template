@@ -239,7 +239,7 @@ export function ProfilePage() {
           </p>
         )}
         {employee && (
-          <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="mb-10 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-slate-500">Your profile</p>
@@ -253,7 +253,7 @@ export function ProfilePage() {
               {!editing && (
                 <button
                   type="button"
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
                   onClick={startEdit}
                 >
                   Edit profile
@@ -337,7 +337,7 @@ export function ProfilePage() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-60"
                   >
                     {saving ? "Saving…" : "Save changes"}
                   </button>
@@ -384,7 +384,7 @@ export function ProfilePage() {
         {employee && GrantAccess.canManageAccess(access) && <GrantAccess />}
 
         {employee && (
-          <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="mb-10 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">
               Resource access
             </h2>
@@ -437,7 +437,7 @@ export function ProfilePage() {
         )}
 
         {employee && (
-          <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="mb-10 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">
               Signed-in devices
             </h2>
@@ -459,7 +459,7 @@ export function ProfilePage() {
                         <p className="text-sm font-medium text-slate-900">
                           {session.device}
                           {session.current ? (
-                            <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-medium text-white">
+                            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-white">
                               This device
                             </span>
                           ) : null}

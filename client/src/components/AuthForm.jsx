@@ -7,7 +7,7 @@ export function AuthLayout({ title, subtitle, children, footer }) {
       <Header />
       <main className="flex justify-center px-4 py-10 sm:py-16">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm sm:p-8">
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
               {title}
             </h1>
@@ -54,7 +54,7 @@ export function TextField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={required}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+        className="w-full rounded-lg border border-slate-300 bg-surface px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15"
       />
       {hint && <p className="text-xs leading-5 text-slate-400">{hint}</p>}
     </div>
@@ -66,7 +66,7 @@ export function AuthButton({ children, loading }) {
     <button
       type="submit"
       disabled={loading}
-      className="mt-2 w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+      className="mt-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
     >
       {children}
     </button>

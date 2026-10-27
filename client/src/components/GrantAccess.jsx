@@ -106,7 +106,7 @@ export function GrantAccess() {
 
   if (loading) {
     return (
-      <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="mb-10 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
         <p className="text-sm text-slate-500">Loading access settings…</p>
       </section>
     );
@@ -114,14 +114,14 @@ export function GrantAccess() {
 
   if (!catalog) {
     return (
-      <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="mb-10 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
         <p className="text-sm text-red-700">{error || "Unable to load access settings."}</p>
       </section>
     );
   }
 
   return (
-    <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="mb-10 rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">Roles and access</h2>
       <p className="mt-1 mb-5 text-sm text-slate-500">
         Assign a role to each person. Then choose which resources that role can
