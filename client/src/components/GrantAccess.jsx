@@ -10,6 +10,11 @@ export function GrantAccess() {
   const [memberSearch, setMemberSearch] = useState("");
   const [memberPage, setMemberPage] = useState(1);
   const [membersLoading, setMembersLoading] = useState(false);
+  const [resources, setResources] = useState([]);
+  const [resourcesPagination, setResourcesPagination] = useState({ page: 1, pageSize: 10, total: 0, totalPages: 1 });
+  const [resourceSearch, setResourceSearch] = useState("");
+  const [resourcePage, setResourcePage] = useState(1);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState("");
@@ -58,6 +63,26 @@ export function GrantAccess() {
     setMembersPagination(payload.data.pagination);
   }
 
+  async function loadResources(page, search, signal) {
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(resourcesPagination.pageSize),
+    });
+    if (search.trim()) {
+      params.set("search", search.trim());
+    }
+    const res = await fetch(`${API_URL}/access/resources?${params}`, {
+      credentials: "include",
+      signal,
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload.statusMessage || "Unable to load resources.");
+    }
+    setResources(payload.data.resources || []);
+    setResourcesPagination(payload.data.pagination);
+  }
+
   useEffect(function () {
     loadCatalog().catch(function (err) {
       setError(err.message);
@@ -87,6 +112,28 @@ export function GrantAccess() {
       controller.abort();
     };
   }, [memberPage, memberSearch]);
+
+  useEffect(function () {
+    const controller = new AbortController();
+    const timer = setTimeout(function () {
+      setResourcesLoading(true);
+      loadResources(resourcePage, resourceSearch, controller.signal)
+        .catch(function (err) {
+          if (err.name !== "AbortError") {
+            setError(err.message);
+          }
+        })
+        .finally(function () {
+          if (!controller.signal.aborted) {
+            setResourcesLoading(false);
+          }
+        });
+    }, 250);
+    return function () {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [resourcePage, resourceSearch]);
 
   const selectedRole = (catalog?.roles || []).find(function (role) {
     return role.id === selectedRoleId;
@@ -311,6 +358,28 @@ export function GrantAccess() {
           restrict it here.
         </p>
       ) : (
+        <>
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <input
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 sm:w-80"
+            type="search"
+            value={resourceSearch}
+            placeholder="Search resources by name or key"
+            aria-label="Search resources by name or key"
+            onChange={function (evt) {
+              setResourceSearch(evt.target.value);
+              setResourcePage(1);
+            }}
+          />
+          <span className="text-sm text-slate-500">
+            {resourcesPagination.total === 0
+              ? "0 resources"
+              : `${(resourcesPagination.page - 1) * resourcesPagination.pageSize + 1}-${Math.min(
+                  resourcesPagination.page * resourcesPagination.pageSize,
+                  resourcesPagination.total
+                )} of ${resourcesPagination.total}`}
+          </span>
+        </div>
         <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -326,7 +395,7 @@ export function GrantAccess() {
               </tr>
             </thead>
             <tbody>
-              {catalog.resources.map(function (resource) {
+              {resources.map(function (resource) {
                 const granted = selectedRole?.grants[resource.id] || [];
                 const busy = savingKey === `${selectedRole?.id}:${resource.key}`;
                 return (
@@ -352,9 +421,40 @@ export function GrantAccess() {
                   </tr>
                 );
               })}
+              {!resourcesLoading && resources.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="px-3 py-6 text-center text-sm text-slate-500">
+                    No resources match this search.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+        <div className="mt-3 flex items-center justify-end gap-3 text-sm text-slate-600">
+          <button
+            type="button"
+            className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={resourcePage <= 1 || resourcesLoading}
+            onClick={function () {
+              setResourcePage(function (page) { return page - 1; });
+            }}
+          >
+            Previous
+          </button>
+          <span>Page {resourcesPagination.page} of {resourcesPagination.totalPages}</span>
+          <button
+            type="button"
+            className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={resourcePage >= resourcesPagination.totalPages || resourcesLoading}
+            onClick={function () {
+              setResourcePage(function (page) { return page + 1; });
+            }}
+          >
+            Next
+          </button>
+        </div>
+        </>
       )}
     </section>
   );

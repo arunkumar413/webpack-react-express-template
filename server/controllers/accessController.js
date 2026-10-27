@@ -19,6 +19,10 @@ function idString(value) {
   return value.toString();
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 async function countOtherAdmins(tenantId, excludeEmployeeId) {
   const adminRoles = await Role.find({
     tenantId,
@@ -41,9 +45,8 @@ async function countOtherAdmins(tenantId, excludeEmployeeId) {
 module.exports.getAccessCatalog = async function (req, res) {
   try {
     const tenantId = req.session.user.tenantId;
-    const [roles, resources, permissions] = await Promise.all([
+    const [roles, permissions] = await Promise.all([
       Role.find({ tenantId }).sort({ name: 1 }).lean(),
-      Resource.find({}).sort({ name: 1 }).lean(),
       Permission.find({ tenantId }).lean(),
     ]);
 
@@ -61,14 +64,6 @@ module.exports.getAccessCatalog = async function (req, res) {
     res.json({
       data: {
         actions: RESOURCE_ACTIONS,
-        resources: resources.map(function (resource) {
-          return {
-            id: resource._id.toString(),
-            key: resource.key,
-            name: resource.name,
-            description: resource.description || "",
-          };
-        }),
         roles: roles.map(function (role) {
           return {
             id: role._id.toString(),
@@ -84,6 +79,56 @@ module.exports.getAccessCatalog = async function (req, res) {
   } catch (err) {
     console.log(err);
     res.status(500).json({ statusMessage: "Unable to load access settings" });
+  }
+};
+
+module.exports.getAccessResources = async function (req, res) {
+  try {
+    const query = String(req.query.search || "").trim();
+    const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
+    const pageSize = Math.min(
+      Math.max(Number.parseInt(req.query.pageSize, 10) || 10, 1),
+      50
+    );
+    const filter = query
+      ? {
+          $or: [
+            { key: new RegExp(escapeRegex(query), "i") },
+            { name: new RegExp(escapeRegex(query), "i") },
+          ],
+        }
+      : {};
+
+    const [total, resources] = await Promise.all([
+      Resource.countDocuments(filter),
+      Resource.find(filter)
+        .sort({ name: 1, _id: 1 })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .lean(),
+    ]);
+
+    res.json({
+      data: {
+        resources: resources.map(function (resource) {
+          return {
+            id: resource._id.toString(),
+            key: resource.key,
+            name: resource.name,
+            description: resource.description || "",
+          };
+        }),
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.max(Math.ceil(total / pageSize), 1),
+        },
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ statusMessage: "Unable to load access resources" });
   }
 };
 
@@ -120,8 +165,7 @@ module.exports.getAccessMembers = async function (req, res) {
     const filter = { tenantId, isActive: true };
 
     if (search) {
-      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const searchPattern = new RegExp(escapedSearch, "i");
+      const searchPattern = new RegExp(escapeRegex(search), "i");
       filter.$or = [{ name: searchPattern }, { email: searchPattern }];
     }
 
