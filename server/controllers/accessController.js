@@ -41,15 +41,10 @@ async function countOtherAdmins(tenantId, excludeEmployeeId) {
 module.exports.getAccessCatalog = async function (req, res) {
   try {
     const tenantId = req.session.user.tenantId;
-    const [roles, resources, permissions, employees] = await Promise.all([
+    const [roles, resources, permissions] = await Promise.all([
       Role.find({ tenantId }).sort({ name: 1 }).lean(),
       Resource.find({}).sort({ name: 1 }).lean(),
       Permission.find({ tenantId }).lean(),
-      Employee.find({ tenantId, isActive: true })
-        .select("name email designation departmentId roleIds")
-        .populate("departmentId", "name")
-        .populate("roleIds", "name fullAccess")
-        .sort({ name: 1 }),
     ]);
 
     const grantsByRole = {};
@@ -84,31 +79,78 @@ module.exports.getAccessCatalog = async function (req, res) {
             grants: grantsByRole[role._id.toString()] || {},
           };
         }),
-        members: employees.map(function (person) {
-          return {
-            id: person._id.toString(),
-            name: person.name,
-            email: person.email,
-            designation: person.designation || "",
-            departmentName:
-              person.departmentId && person.departmentId.name
-                ? person.departmentId.name
-                : "Company-wide",
-            roleIds: (person.roleIds || []).map(function (role) {
-              return idString(role);
-            }),
-            roles: (person.roleIds || [])
-              .map(function (role) {
-                return role && role.name ? role.name : null;
-              })
-              .filter(Boolean),
-          };
-        }),
       },
     });
   } catch (err) {
     console.log(err);
     res.status(500).json({ statusMessage: "Unable to load access settings" });
+  }
+};
+
+function serializeMember(person) {
+  return {
+    id: person._id.toString(),
+    name: person.name,
+    email: person.email,
+    designation: person.designation || "",
+    departmentName:
+      person.departmentId && person.departmentId.name
+        ? person.departmentId.name
+        : "Company-wide",
+    roleIds: (person.roleIds || []).map(function (role) {
+      return idString(role);
+    }),
+    roles: (person.roleIds || [])
+      .map(function (role) {
+        return role && role.name ? role.name : null;
+      })
+      .filter(Boolean),
+  };
+}
+
+module.exports.getAccessMembers = async function (req, res) {
+  try {
+    const tenantId = req.session.user.tenantId;
+    const search = String(req.query.search || "").trim();
+    const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
+    const pageSize = Math.min(
+      Math.max(Number.parseInt(req.query.pageSize, 10) || 10, 1),
+      50
+    );
+    const filter = { tenantId, isActive: true };
+
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const searchPattern = new RegExp(escapedSearch, "i");
+      filter.$or = [{ name: searchPattern }, { email: searchPattern }];
+    }
+
+    const [total, employees] = await Promise.all([
+      Employee.countDocuments(filter),
+      Employee.find(filter)
+        .select("name email designation departmentId roleIds")
+        .populate("departmentId", "name")
+        .populate("roleIds", "name fullAccess")
+        .sort({ name: 1, _id: 1 })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .lean(),
+    ]);
+
+    res.json({
+      data: {
+        members: employees.map(serializeMember),
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.max(Math.ceil(total / pageSize), 1),
+        },
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ statusMessage: "Unable to load members" });
   }
 };
 

@@ -66,6 +66,7 @@ const {
 const { listResources } = require("./controllers/resourceController");
 const {
   getAccessCatalog,
+  getAccessMembers,
   updateRoleResource,
   setMemberRole,
 } = require("./controllers/accessController");
@@ -195,6 +196,12 @@ app.get(
   checkAuthentication,
   checkAuthorization({ resource: "role", action: "read" }),
   getAccessCatalog
+);
+app.get(
+  "/api/access/members",
+  checkAuthentication,
+  checkAuthorization({ resource: "role", action: "read" }),
+  getAccessMembers
 );
 app.patch(
   "/api/access/roles/:roleId",

@@ -5,6 +5,11 @@ const ACTIONS = ["read", "write", "update", "delete"];
 
 export function GrantAccess() {
   const [catalog, setCatalog] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [membersPagination, setMembersPagination] = useState({ page: 1, pageSize: 10, total: 0, totalPages: 1 });
+  const [memberSearch, setMemberSearch] = useState("");
+  const [memberPage, setMemberPage] = useState(1);
+  const [membersLoading, setMembersLoading] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState("");
@@ -12,7 +17,7 @@ export function GrantAccess() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  async function load() {
+  async function loadCatalog() {
     setError("");
     const res = await fetch(`${API_URL}/access`, { credentials: "include" });
     const payload = await res.json();
@@ -33,13 +38,55 @@ export function GrantAccess() {
     });
   }
 
+  async function loadMembers(page, search, signal) {
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(membersPagination.pageSize),
+    });
+    if (search.trim()) {
+      params.set("search", search.trim());
+    }
+    const res = await fetch(`${API_URL}/access/members?${params}`, {
+      credentials: "include",
+      signal,
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload.statusMessage || "Unable to load members.");
+    }
+    setMembers(payload.data.members || []);
+    setMembersPagination(payload.data.pagination);
+  }
+
   useEffect(function () {
-    load().catch(function (err) {
+    loadCatalog().catch(function (err) {
       setError(err.message);
     }).finally(function () {
       setLoading(false);
     });
   }, []);
+
+  useEffect(function () {
+    const controller = new AbortController();
+    const timer = setTimeout(function () {
+      setMembersLoading(true);
+      loadMembers(memberPage, memberSearch, controller.signal)
+        .catch(function (err) {
+          if (err.name !== "AbortError") {
+            setError(err.message);
+          }
+        })
+        .finally(function () {
+          if (!controller.signal.aborted) {
+            setMembersLoading(false);
+          }
+        });
+    }, 250);
+    return function () {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [memberPage, memberSearch]);
 
   const selectedRole = (catalog?.roles || []).find(function (role) {
     return role.id === selectedRoleId;
@@ -62,7 +109,7 @@ export function GrantAccess() {
         return;
       }
       setNotice(payload.statusMessage);
-      await load();
+      await loadMembers(memberPage, memberSearch);
     } catch (err) {
       setError("Unable to assign role.");
     } finally {
@@ -96,7 +143,7 @@ export function GrantAccess() {
         return;
       }
       setNotice(payload.statusMessage);
-      await load();
+      await loadCatalog();
     } catch (err) {
       setError("Unable to update role.");
     } finally {
@@ -140,6 +187,27 @@ export function GrantAccess() {
       )}
 
       <h3 className="mb-2 text-sm font-semibold text-slate-900">People</h3>
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <input
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 sm:w-80"
+          type="search"
+          value={memberSearch}
+          placeholder="Search by name or email"
+          aria-label="Search people by name or email"
+          onChange={function (evt) {
+            setMemberSearch(evt.target.value);
+            setMemberPage(1);
+          }}
+        />
+        <span className="text-sm text-slate-500">
+          {membersPagination.total === 0
+            ? "0 people"
+            : `${(membersPagination.page - 1) * membersPagination.pageSize + 1}-${Math.min(
+                membersPagination.page * membersPagination.pageSize,
+                membersPagination.total
+              )} of ${membersPagination.total}`}
+        </span>
+      </div>
       <div className="mb-8 overflow-x-auto rounded-lg border border-slate-200">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -150,7 +218,7 @@ export function GrantAccess() {
             </tr>
           </thead>
           <tbody>
-            {catalog.members.map(function (member) {
+            {members.map(function (member) {
               return (
                 <tr key={member.id} className="border-t border-slate-100">
                   <td className="px-3 py-2">
@@ -181,8 +249,38 @@ export function GrantAccess() {
                 </tr>
               );
             })}
+            {!membersLoading && members.length === 0 && (
+              <tr>
+                <td colSpan="3" className="px-3 py-6 text-center text-sm text-slate-500">
+                  No people match this search.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
+      </div>
+      <div className="mb-8 flex items-center justify-end gap-3 text-sm text-slate-600">
+        <button
+          type="button"
+          className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={memberPage <= 1 || membersLoading}
+          onClick={function () {
+            setMemberPage(function (page) { return page - 1; });
+          }}
+        >
+          Previous
+        </button>
+        <span>Page {membersPagination.page} of {membersPagination.totalPages}</span>
+        <button
+          type="button"
+          className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={memberPage >= membersPagination.totalPages || membersLoading}
+          onClick={function () {
+            setMemberPage(function (page) { return page + 1; });
+          }}
+        >
+          Next
+        </button>
       </div>
 
       <h3 className="mb-2 text-sm font-semibold text-slate-900">
