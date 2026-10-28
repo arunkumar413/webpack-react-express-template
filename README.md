@@ -59,6 +59,73 @@ Optional: `client/.env` can set `REACT_APP_API_URL` (defaults to `/api`).
 
 `npm run build` from the project root builds the client for production. Then `NODE_ENV=production npm start` serves the UI and API together.
 
+## Calling an API and storing its response in Redux
+
+The client provides `apiRequest` in `client/src/store/apiClient.js` as a small
+wrapper around `fetch`. Pass the Redux `dispatch` function, a unique response
+key, the API URL, and the fetch options:
+
+```jsx
+import { useDispatch, useSelector } from "react-redux";
+import { apiRequest } from "./store/apiClient";
+import { API_URL } from "./constants";
+
+function Example() {
+  const dispatch = useDispatch();
+  const response = useSelector((state) => state.api.profile || {});
+
+  async function loadProfile() {
+    const result = await apiRequest(
+      dispatch,
+      "profile",
+      `${API_URL}/profile`,
+      { credentials: "include" }
+    );
+
+    if (!result.response.ok) {
+      // The error is also available at state.api.profile.error in Redux.
+      return;
+    }
+
+    // The response is already stored in Redux by apiRequest.
+    console.log(result.payload.data);
+  }
+
+  return <button onClick={loadProfile}>Load profile</button>;
+}
+```
+
+Each response is stored at `state.api[<key>]` with this shape:
+
+```js
+{
+  statusCode: 200,
+  data: {/* API response data */},
+  error: null
+}
+```
+
+`apiRequest` clears the response for the supplied key before every new call,
+so stale API data is removed while the request is in flight. The request then
+stores either the successful response or the error response in Redux. To clear
+one response manually, dispatch `clearApiResponse("profile")`; to clear all
+API responses, dispatch `clearApiResponses()`:
+
+```jsx
+import {
+  clearApiResponse,
+  clearApiResponses,
+  selectApiResponse,
+} from "./store/apiSlice";
+
+const profile = useSelector((state) =>
+  selectApiResponse(state, "profile")
+);
+
+dispatch(clearApiResponse("profile")); // Clear one key
+dispatch(clearApiResponses());          // Clear every API key
+```
+
 ## Deploy to Cloud Run
 
 Google puts HTTPS in front of the app. There is no Dockerfile and no App Engine `app.yaml`.

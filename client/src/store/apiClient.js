@@ -1,4 +1,4 @@
-import { setApiResponse } from "./apiSlice";
+import { clearApiResponse, setApiResponse } from "./apiSlice";
 
 function getError(payload, response) {
   if (response.ok) {
@@ -16,6 +16,10 @@ function getError(payload, response) {
 }
 
 export async function apiRequest(dispatch, key, url, options) {
+  // Remove the previous result before starting a new request so consumers do
+  // not render stale data while the request is in flight.
+  dispatch(clearApiResponse(key));
+
   try {
     const response = await fetch(url, options);
     let payload = null;
