@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { API_URL } from "../constants";
+import { apiRequest } from "../store/apiClient";
 
 const SAMPLE_CSV = "name,email,designation\nAlex Rivera,alex.rivera@acme.example,Backend Engineer\n";
 
@@ -73,6 +75,9 @@ export function InviteTeam({ departmentName }) {
   const [notice, setNotice] = useState("");
   const [result, setResult] = useState(null);
   const [sending, setSending] = useState(false);
+  const dispatch = useDispatch();
+  const inviteResponse = useSelector((state) => state.api.inviteTeam || {});
+  const storedResult = inviteResponse.data || result;
 
   const preview = useMemo(
     function () {
@@ -121,22 +126,18 @@ export function InviteTeam({ departmentName }) {
     setNotice("");
     setResult(null);
     try {
-      const res = await fetch(`${API_URL}/employees/invite`, {
+      const result = await apiRequest(dispatch, "inviteTeam", `${API_URL}/employees/invite`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rows }),
       });
-      const payload = await res.json();
-      if (!res.ok) {
-        setError(payload.statusMessage || "Unable to invite teammates.");
-        if (payload.data) {
-          setResult(payload.data);
-        }
+      if (!result.response.ok) {
+        setError(result.payload.statusMessage || "Unable to invite teammates.");
         return;
       }
-      setNotice(payload.statusMessage);
-      setResult(payload.data);
+      setNotice(result.payload.statusMessage);
+      setResult(result.payload.data);
       setRows([]);
       setFileName("");
     } catch (err) {
@@ -231,21 +232,21 @@ export function InviteTeam({ departmentName }) {
           : `Invite ${rows.length} to ${departmentName || "your department"}`}
       </button>
 
-      {result && (result.created?.length > 0 || result.errors?.length > 0) && (
+      {storedResult && (storedResult.created?.length > 0 || storedResult.errors?.length > 0) && (
         <div className="mt-5 space-y-3 text-sm">
-          {result.created?.length > 0 && (
+          {storedResult.created?.length > 0 && (
             <p className="text-slate-700">
-              Created {result.created.length}.{" "}
-              {result.created.some(function (item) {
+              Created {storedResult.created.length}.{" "}
+              {storedResult.created.some(function (item) {
                 return !item.emailed;
               })
                 ? "SMTP is not configured, so invite codes are in the server log."
                 : "Invite codes were emailed."}
             </p>
           )}
-          {result.errors?.length > 0 && (
+          {storedResult.errors?.length > 0 && (
             <ul className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
-              {result.errors.map(function (item) {
+              {storedResult.errors.map(function (item) {
                 return (
                   <li key={`${item.row}-${item.email}`}>
                     Row {item.row}

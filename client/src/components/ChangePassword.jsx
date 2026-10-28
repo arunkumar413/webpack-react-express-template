@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 import { API_URL } from "../constants";
+import { apiRequest } from "../store/apiClient";
 
 export function ChangePassword({ email }) {
   const [otpSent, setOtpSent] = useState(false);
@@ -13,6 +15,7 @@ export function ChangePassword({ email }) {
     password: "",
     confirmPassword: "",
   });
+  const dispatch = useDispatch();
 
   function handleChange(evt) {
     const { name, value } = evt.target;
@@ -26,17 +29,16 @@ export function ChangePassword({ email }) {
     setError("");
     setNotice("");
     try {
-      const res = await fetch(`${API_URL}/profile/password/otp`, {
+      const result = await apiRequest(dispatch, "requestPasswordOtp", `${API_URL}/profile/password/otp`, {
         method: "POST",
         credentials: "include",
       });
-      const result = await res.json();
-      if (!res.ok) {
-        setError(result.statusMessage || "Unable to send code.");
+      if (!result.response.ok) {
+        setError(result.payload.statusMessage || "Unable to send code.");
         return;
       }
       setOtpSent(true);
-      setOtpMessage(result.statusMessage || "A code was sent to your email.");
+      setOtpMessage(result.payload.statusMessage || "A code was sent to your email.");
     } catch (err) {
       setError("Unable to send code.");
     } finally {
@@ -50,18 +52,17 @@ export function ChangePassword({ email }) {
     setError("");
     setNotice("");
     try {
-      const res = await fetch(`${API_URL}/profile/password`, {
+      const result = await apiRequest(dispatch, "changePassword", `${API_URL}/profile/password`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const result = await res.json();
-      if (!res.ok) {
-        setError(result.statusMessage || "Unable to change password.");
+      if (!result.response.ok) {
+        setError(result.payload.statusMessage || "Unable to change password.");
         return;
       }
-      setNotice(result.statusMessage || "Password updated.");
+      setNotice(result.payload.statusMessage || "Password updated.");
       setForm({ otp: "", password: "", confirmPassword: "" });
       setOtpSent(false);
       setOtpMessage("");

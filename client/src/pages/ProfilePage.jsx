@@ -7,6 +7,7 @@ import { GrantAccess } from "../components/GrantAccess";
 import { OrgHierarchy } from "../components/OrgHierarchy";
 import { setUserInfo } from "../store/authSlice";
 import { API_URL } from "../constants";
+import { apiRequest } from "../store/apiClient";
 
 const emptyForm = {
   name: "",
@@ -41,9 +42,14 @@ function Detail({ label, value }) {
 export function ProfilePage() {
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
-  const [employee, setEmployee] = useState(null);
-  const [departments, setDepartments] = useState([]);
-  const [hierarchy, setHierarchy] = useState(null);
+  const profileResponse = useSelector((state) => state.api.profile || {});
+  const hierarchyResponse = useSelector((state) => state.api.hierarchy || {});
+  const profileData = profileResponse.data || {};
+  const employee = profileData.employee || null;
+  const departments = profileData.departments || [];
+  const sessions = profileData.sessions || [];
+  const access = profileData.access || { fullAccess: false, grants: [] };
+  const hierarchy = hierarchyResponse.data || null;
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -52,8 +58,6 @@ export function ProfilePage() {
   const [hierarchyError, setHierarchyError] = useState("");
   const [notice, setNotice] = useState("");
   const [departmentSavingId, setDepartmentSavingId] = useState("");
-  const [sessions, setSessions] = useState([]);
-  const [access, setAccess] = useState({ fullAccess: false, grants: [] });
 
   useEffect(function () {
     async function load() {
@@ -61,27 +65,21 @@ export function ProfilePage() {
       setHierarchyError("");
       try {
         const [profileRes, hierarchyRes] = await Promise.all([
-          fetch(`${API_URL}/profile`, { credentials: "include" }),
-          fetch(`${API_URL}/hierarchy`, { credentials: "include" }),
+          apiRequest(dispatch, "profile", `${API_URL}/profile`, { credentials: "include" }),
+          apiRequest(dispatch, "hierarchy", `${API_URL}/hierarchy`, { credentials: "include" }),
         ]);
 
-        if (profileRes.status === 401) {
+        if (profileRes.response.status === 401) {
           setError("Please sign in to view your profile.");
           return;
         }
-        if (!profileRes.ok) {
+        if (!profileRes.response.ok) {
           setError("Unable to load profile.");
           return;
         }
 
-        const profileResult = await profileRes.json();
+        const profileResult = profileRes.payload;
         const nextEmployee = profileResult.data.employee;
-        setEmployee(nextEmployee);
-        setDepartments(profileResult.data.departments || []);
-        setSessions(profileResult.data.sessions || []);
-        setAccess(
-          profileResult.data.access || { fullAccess: false, grants: [] }
-        );
         setForm({
           name: nextEmployee.name || "",
           username: nextEmployee.username || "",
@@ -90,14 +88,11 @@ export function ProfilePage() {
           phone: nextEmployee.phone || "",
         });
 
-        if (hierarchyRes.status === 403) {
+        if (hierarchyRes.response.status === 403) {
           setHierarchyError(
             "You do not have permission to view the organization hierarchy."
           );
-        } else if (hierarchyRes.ok) {
-          const hierarchyResult = await hierarchyRes.json();
-          setHierarchy(hierarchyResult.data);
-        } else if (hierarchyRes.status !== 401) {
+        } else if (hierarchyRes.response.status !== 401) {
           setHierarchyError("Unable to load hierarchy.");
         }
       } catch (err) {
@@ -144,20 +139,18 @@ export function ProfilePage() {
     setNotice("");
 
     try {
-      const res = await fetch(`${API_URL}/profile`, {
+      const result = await apiRequest(dispatch, "profile", `${API_URL}/profile`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const result = await res.json();
-      if (!res.ok) {
-        setError(result.statusMessage || "Unable to update profile.");
+      if (!result.response.ok) {
+        setError(result.payload.statusMessage || "Unable to update profile.");
         return;
       }
 
-      const nextEmployee = result.data.employee;
-      setEmployee(nextEmployee);
+      const nextEmployee = result.payload.data.employee;
       setForm({
         name: nextEmployee.name || "",
         username: nextEmployee.username || "",
@@ -168,9 +161,9 @@ export function ProfilePage() {
       setEditing(false);
       setNotice("Profile updated.");
 
-      if (result.data.session) {
+      if (result.payload.data.session) {
         const stored = JSON.parse(localStorage.getItem("userInfo") || "{}");
-        const nextAuth = { ...stored, ...result.data.session };
+        const nextAuth = { ...stored, ...result.payload.data.session };
         localStorage.setItem("userInfo", JSON.stringify(nextAuth));
         dispatch(setUserInfo(nextAuth));
       }
@@ -184,43 +177,30 @@ export function ProfilePage() {
   }
 
   async function reloadHierarchy() {
-    const hierarchyRes = await fetch(`${API_URL}/hierarchy`, {
+    const hierarchyResult = await apiRequest(dispatch, "hierarchy", `${API_URL}/hierarchy`, {
       credentials: "include",
     });
-    if (hierarchyRes.ok) {
-      const hierarchyResult = await hierarchyRes.json();
-      setHierarchy(hierarchyResult.data);
-    }
+    return hierarchyResult;
   }
 
   async function handleDepartmentChange(employeeId, departmentId) {
     setDepartmentSavingId(employeeId);
     setHierarchyError("");
     try {
-      const res = await fetch(`${API_URL}/employees/${employeeId}/department`, {
+      const result = await apiRequest(dispatch, "updateDepartment", `${API_URL}/employees/${employeeId}/department`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ departmentId }),
       });
-      const result = await res.json();
-      if (!res.ok) {
-        setHierarchyError(result.statusMessage || "Unable to update department.");
+      if (!result.response.ok) {
+        setHierarchyError(result.payload.statusMessage || "Unable to update department.");
         return;
       }
       await reloadHierarchy();
-      if (employee && employee.id === employeeId) {
-        setEmployee(function (prev) {
-          if (!prev) {
-            return prev;
-          }
-          return {
-            ...prev,
-            departmentId: result.data.departmentId,
-            departmentName: result.data.departmentName,
-          };
-        });
-      }
+      await apiRequest(dispatch, "profile", `${API_URL}/profile`, {
+        credentials: "include",
+      });
     } catch (err) {
       setHierarchyError("Unable to update department.");
     } finally {

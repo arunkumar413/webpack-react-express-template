@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_URL } from "../constants";
+import { useDispatch } from "react-redux";
+import { apiRequest } from "../store/apiClient";
 import {
   AuthButton,
   AuthError,
@@ -20,6 +22,7 @@ export function AcceptInvite() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   function handleChange(evt) {
     const { name, value } = evt.target;
@@ -34,17 +37,16 @@ export function AcceptInvite() {
     setNotice("");
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/invite/accept`, {
+      const result = await apiRequest(dispatch, "acceptInvite", `${API_URL}/invite/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const result = await res.json();
-      if (!res.ok) {
-        setError(result.statusMessage || "Unable to accept invite.");
+      if (!result.response.ok) {
+        setError(result.payload.statusMessage || "Unable to accept invite.");
         return;
       }
-      setNotice(result.statusMessage || "Password saved.");
+      setNotice(result.payload.statusMessage || "Password saved.");
       setTimeout(function () {
         navigate("/login");
       }, 800);

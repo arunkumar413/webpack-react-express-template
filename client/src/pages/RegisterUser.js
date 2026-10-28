@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setUserInfo } from "../store/authSlice";
+import { apiRequest } from "../store/apiClient";
 import { API_URL } from "../constants";
 import {
   AuthButton,
@@ -40,7 +41,7 @@ export function RegisterUser() {
 
     setLoading(true);
     try {
-      let res = await fetch(`${API_URL}/register`, {
+      let result = await apiRequest(dispatch, "register", `${API_URL}/register`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -48,13 +49,12 @@ export function RegisterUser() {
         },
         body: JSON.stringify(userInfo),
       });
-      let result = await res.json();
-      if (!res.ok || !result.data) {
-        setError(result.statusMessage || "Registration failed");
+      if (!result.response.ok || !result.payload.data) {
+        setError(result.payload.statusMessage || "Registration failed");
         return;
       }
-      localStorage.setItem("userInfo", JSON.stringify(result.data));
-      dispatch(setUserInfo(result.data));
+      localStorage.setItem("userInfo", JSON.stringify(result.payload.data));
+      dispatch(setUserInfo(result.payload.data));
       navigate("/");
     } catch (err) {
       setError("Unable to reach the server. Try again.");

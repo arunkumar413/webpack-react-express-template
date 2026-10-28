@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout, setUserInfo } from "../store/authSlice";
 import { ThemeSelect } from "./ThemeSelect";
 import { API_URL } from "../constants";
+import { apiRequest } from "../store/apiClient";
 
 export function Header() {
   const dispatch = useDispatch();
@@ -26,14 +27,14 @@ export function Header() {
   }, [dispatch]);
 
   async function handleLogout() {
-    let res = await fetch(`${API_URL}/logout`, {
+    let result = await apiRequest(dispatch, "logout", `${API_URL}/logout`, {
       headers: {
         "Content-Type": "application/json",
       },
       method: "POST",
       credentials: "include",
     });
-    if (res.status === 200) {
+    if (result.response.ok) {
       localStorage.removeItem("userInfo");
       dispatch(logout());
     } else {

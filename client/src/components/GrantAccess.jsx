@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { API_URL } from "../constants";
+import { apiRequest } from "../store/apiClient";
 
 const ACTIONS = ["read", "write", "update", "delete"];
 
 export function GrantAccess() {
-  const [catalog, setCatalog] = useState(null);
-  const [members, setMembers] = useState([]);
+  const dispatch = useDispatch();
+  const catalogResponse = useSelector((state) => state.api.accessCatalog || {});
+  const membersResponse = useSelector((state) => state.api.accessMembers || {});
+  const resourcesResponse = useSelector((state) => state.api.accessResources || {});
+  const catalog = catalogResponse.data;
+  const members = membersResponse.data?.members || [];
+  const resources = resourcesResponse.data?.resources || [];
   const [membersPagination, setMembersPagination] = useState({ page: 1, pageSize: 10, total: 0, totalPages: 1 });
   const [memberSearch, setMemberSearch] = useState("");
   const [memberPage, setMemberPage] = useState(1);
   const [membersLoading, setMembersLoading] = useState(false);
-  const [resources, setResources] = useState([]);
   const [resourcesPagination, setResourcesPagination] = useState({ page: 1, pageSize: 10, total: 0, totalPages: 1 });
   const [resourceSearch, setResourceSearch] = useState("");
   const [resourcePage, setResourcePage] = useState(1);
@@ -24,12 +30,11 @@ export function GrantAccess() {
 
   async function loadCatalog() {
     setError("");
-    const res = await fetch(`${API_URL}/access`, { credentials: "include" });
-    const payload = await res.json();
-    if (!res.ok) {
+    const result = await apiRequest(dispatch, "accessCatalog", `${API_URL}/access`, { credentials: "include" });
+    const payload = result.payload;
+    if (!result.response.ok) {
       throw new Error(payload.statusMessage || "Unable to load access settings.");
     }
-    setCatalog(payload.data);
     setSelectedRoleId(function (current) {
       if (current && payload.data.roles.some(function (role) {
         return role.id === current;
@@ -51,15 +56,14 @@ export function GrantAccess() {
     if (search.trim()) {
       params.set("search", search.trim());
     }
-    const res = await fetch(`${API_URL}/access/members?${params}`, {
+    const result = await apiRequest(dispatch, "accessMembers", `${API_URL}/access/members?${params}`, {
       credentials: "include",
       signal,
     });
-    const payload = await res.json();
-    if (!res.ok) {
+    const payload = result.payload;
+    if (!result.response.ok) {
       throw new Error(payload.statusMessage || "Unable to load members.");
     }
-    setMembers(payload.data.members || []);
     setMembersPagination(payload.data.pagination);
   }
 
@@ -71,15 +75,14 @@ export function GrantAccess() {
     if (search.trim()) {
       params.set("search", search.trim());
     }
-    const res = await fetch(`${API_URL}/access/resources?${params}`, {
+    const result = await apiRequest(dispatch, "accessResources", `${API_URL}/access/resources?${params}`, {
       credentials: "include",
       signal,
     });
-    const payload = await res.json();
-    if (!res.ok) {
+    const payload = result.payload;
+    if (!result.response.ok) {
       throw new Error(payload.statusMessage || "Unable to load resources.");
     }
-    setResources(payload.data.resources || []);
     setResourcesPagination(payload.data.pagination);
   }
 
@@ -144,14 +147,14 @@ export function GrantAccess() {
     setError("");
     setNotice("");
     try {
-      const res = await fetch(`${API_URL}/access/members/${memberId}/role`, {
+      const result = await apiRequest(dispatch, "updateMemberRole", `${API_URL}/access/members/${memberId}/role`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roleId }),
       });
-      const payload = await res.json();
-      if (!res.ok) {
+      const payload = result.payload;
+      if (!result.response.ok) {
         setError(payload.statusMessage || "Unable to assign role.");
         return;
       }
@@ -178,14 +181,14 @@ export function GrantAccess() {
     setError("");
     setNotice("");
     try {
-      const res = await fetch(`${API_URL}/access/roles/${selectedRole.id}`, {
+      const result = await apiRequest(dispatch, "updateRoleAccess", `${API_URL}/access/roles/${selectedRole.id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resourceKey: resource.key, actions: next }),
       });
-      const payload = await res.json();
-      if (!res.ok) {
+      const payload = result.payload;
+      if (!result.response.ok) {
         setError(payload.statusMessage || "Unable to update role.");
         return;
       }

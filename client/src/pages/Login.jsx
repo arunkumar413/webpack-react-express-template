@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setUserInfo } from "../store/authSlice";
+import { apiRequest } from "../store/apiClient";
 import { API_URL } from "../constants";
 import {
   AuthButton,
@@ -28,7 +29,7 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      let res = await fetch(`${API_URL}/login`, {
+      let result = await apiRequest(dispatch, "login", `${API_URL}/login`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -36,13 +37,12 @@ export function LoginPage() {
         },
         body: JSON.stringify(userCred),
       });
-      let result = await res.json();
-      if (!res.ok || !result.data) {
-        setError(result.statusMessage || "Login failed");
+      if (!result.response.ok || !result.payload.data) {
+        setError(result.payload.statusMessage || "Login failed");
         return;
       }
-      localStorage.setItem("userInfo", JSON.stringify(result.data));
-      dispatch(setUserInfo(result.data));
+      localStorage.setItem("userInfo", JSON.stringify(result.payload.data));
+      dispatch(setUserInfo(result.payload.data));
       navigate("/");
     } catch (err) {
       setError("Unable to reach the server. Try again.");
