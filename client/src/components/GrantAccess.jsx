@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { API_URL } from "../constants";
 import { apiRequest } from "../store/apiClient";
+import { selectApiResponse } from "../store/apiSlice";
 
 const ACTIONS = ["read", "write", "update", "delete"];
 
 export function GrantAccess() {
   const dispatch = useDispatch();
-  const catalogResponse = useSelector((state) => state.api.accessCatalog || {});
-  const membersResponse = useSelector((state) => state.api.accessMembers || {});
-  const resourcesResponse = useSelector((state) => state.api.accessResources || {});
+  const catalogResponse = useSelector((state) => selectApiResponse(state, "accessCatalog"));
+  const membersResponse = useSelector((state) => selectApiResponse(state, "accessMembers"));
+  const resourcesResponse = useSelector((state) => selectApiResponse(state, "accessResources"));
   const catalog = catalogResponse.data;
   const members = membersResponse.data?.members || [];
   const resources = resourcesResponse.data?.resources || [];

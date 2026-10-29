@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {};
+const emptyResponse = Object.freeze({ statusCode: null, data: null, error: null });
 
 export const apiSlice = createSlice({
   name: "api",
@@ -21,6 +22,6 @@ export const { setApiResponse, clearApiResponse, clearApiResponses } =
   apiSlice.actions;
 
 export const selectApiResponse = (state, key) =>
-  state.api[key] || { statusCode: null, data: null, error: null };
+  state.api[key] || emptyResponse;
 
 export default apiSlice.reducer;

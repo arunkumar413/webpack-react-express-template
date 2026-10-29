@@ -8,6 +8,7 @@ import { OrgHierarchy } from "../components/OrgHierarchy";
 import { setUserInfo } from "../store/authSlice";
 import { API_URL } from "../constants";
 import { apiRequest } from "../store/apiClient";
+import { selectApiResponse } from "../store/apiSlice";
 
 const emptyForm = {
   name: "",
@@ -42,8 +43,8 @@ function Detail({ label, value }) {
 export function ProfilePage() {
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
-  const profileResponse = useSelector((state) => state.api.profile || {});
-  const hierarchyResponse = useSelector((state) => state.api.hierarchy || {});
+  const profileResponse = useSelector((state) => selectApiResponse(state, "profile"));
+  const hierarchyResponse = useSelector((state) => selectApiResponse(state, "hierarchy"));
   const profileData = profileResponse.data || {};
   const employee = profileData.employee || null;
   const departments = profileData.departments || [];
@@ -92,7 +93,7 @@ export function ProfilePage() {
           setHierarchyError(
             "You do not have permission to view the organization hierarchy."
           );
-        } else if (hierarchyRes.response.status !== 401) {
+        } else if (!hierarchyRes.response.ok && hierarchyRes.response.status !== 401) {
           setHierarchyError("Unable to load hierarchy.");
         }
       } catch (err) {

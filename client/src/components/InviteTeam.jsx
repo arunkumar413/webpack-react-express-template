@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { API_URL } from "../constants";
 import { apiRequest } from "../store/apiClient";
+import { clearApiResponse, selectApiResponse } from "../store/apiSlice";
 
 const SAMPLE_CSV = "name,email,designation\nAlex Rivera,alex.rivera@acme.example,Backend Engineer\n";
 
@@ -68,16 +69,16 @@ export function parseInviteCsv(text) {
 }
 
 export function InviteTeam({ departmentName }) {
+  const activeReader = useRef(null);
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState([]);
   const [parseError, setParseError] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [result, setResult] = useState(null);
   const [sending, setSending] = useState(false);
   const dispatch = useDispatch();
-  const inviteResponse = useSelector((state) => state.api.inviteTeam || {});
-  const storedResult = inviteResponse.data || result;
+  const inviteResponse = useSelector((state) => selectApiResponse(state, "inviteTeam"));
+  const storedResult = inviteResponse.data;
 
   const preview = useMemo(
     function () {
@@ -87,8 +88,12 @@ export function InviteTeam({ departmentName }) {
   );
 
   function handleFile(evt) {
+    if (activeReader.current) {
+      activeReader.current.abort();
+      activeReader.current = null;
+    }
     const file = evt.target.files && evt.target.files[0];
-    setResult(null);
+    dispatch(clearApiResponse("inviteTeam"));
     setNotice("");
     setError("");
     setParseError("");
@@ -98,14 +103,24 @@ export function InviteTeam({ departmentName }) {
       return;
     }
     setFileName(file.name);
+    // Allow selecting the same file again after correcting or retrying it.
+    evt.target.value = "";
     const reader = new FileReader();
+    activeReader.current = reader;
     reader.onload = function () {
+      if (activeReader.current !== reader) return;
+      activeReader.current = null;
       const parsed = parseInviteCsv(String(reader.result || ""));
       if (parsed.error) {
         setParseError(parsed.error);
         return;
       }
       setRows(parsed.rows);
+    };
+    reader.onerror = function () {
+      if (activeReader.current !== reader) return;
+      activeReader.current = null;
+      setParseError("Unable to read the CSV. Please select the file again.");
     };
     reader.readAsText(file);
   }
@@ -124,7 +139,6 @@ export function InviteTeam({ departmentName }) {
     setSending(true);
     setError("");
     setNotice("");
-    setResult(null);
     try {
       const result = await apiRequest(dispatch, "inviteTeam", `${API_URL}/employees/invite`, {
         method: "POST",
@@ -137,7 +151,6 @@ export function InviteTeam({ departmentName }) {
         return;
       }
       setNotice(result.payload.statusMessage);
-      setResult(result.payload.data);
       setRows([]);
       setFileName("");
     } catch (err) {
@@ -175,6 +188,7 @@ export function InviteTeam({ departmentName }) {
           <input
             className="sr-only"
             type="file"
+            disabled={sending}
             accept=".csv,text/csv"
             onChange={handleFile}
           />
