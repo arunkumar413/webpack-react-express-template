@@ -136,6 +136,10 @@ async function seed() {
     tenantId,
     name: "Engineering",
   });
+  const leadership = await Department.create({
+    tenantId,
+    name: "Leadership",
+  });
   const product = await Department.create({
     tenantId,
     name: "Product",
@@ -168,6 +172,7 @@ async function seed() {
     designation: "Chief Executive Officer",
     phone: "+1-555-0100",
     password,
+    departmentId: leadership._id,
   });
   await assignRole(tenantId, ava, adminRole);
 

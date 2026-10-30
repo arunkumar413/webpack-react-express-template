@@ -14,6 +14,7 @@ import {
 export function RegisterUser() {
   const [userInfo, setuserInfo] = useState({
     organizationName: "",
+    topLevelDepartmentName: "Leadership",
     username: "",
     email: "",
     password: "",
@@ -89,6 +90,16 @@ export function RegisterUser() {
           placeholder="Acme Inc"
           autoComplete="organization"
           hint="Used to name your workspace and generate a URL slug."
+        />
+        <TextField
+          id="topLevelDepartmentName"
+          label="Top-level department"
+          name="topLevelDepartmentName"
+          value={userInfo.topLevelDepartmentName}
+          onChange={handleUserInfo}
+          placeholder="Leadership"
+          hint="Your first department. You can add child departments later."
+          required
         />
         <TextField
           id="username"

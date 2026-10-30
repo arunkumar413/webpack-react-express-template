@@ -3,10 +3,20 @@ const Organization = require("../models/Organization");
 const Role = require("../models/Role");
 const Employee = require("../models/Employee");
 const RoleAssignment = require("../models/RoleAssignment");
+const Department = require("../models/Department");
 const { slugify } = require("./authSession");
-const { ensureCoreResources } = require("./accessControl");
+const {
+  ensureCoreResources,
+  setRoleResourcePermission,
+} = require("./accessControl");
 
-async function provisionOrganization({ name, slug, plan, allowSlugCollision = true }) {
+async function provisionOrganization({
+  name,
+  slug,
+  plan,
+  topLevelDepartmentName,
+  allowSlugCollision = true,
+}) {
   const orgName = String(name || "").trim();
   if (!orgName) {
     const err = new Error("Organization name is required");
@@ -33,18 +43,55 @@ async function provisionOrganization({ name, slug, plan, allowSlugCollision = tr
 
   await ensureCoreResources();
 
-  const adminRole = await Role.create({
+  const [adminRole, managerRole, employeeRole] = await Role.create([
+    {
+      tenantId: organization._id,
+      name: "Admin",
+      description: "Organization administrator",
+      fullAccess: true,
+      isSystem: true,
+    },
+    {
+      tenantId: organization._id,
+      name: "Manager",
+      description: "Department or team manager",
+    },
+    {
+      tenantId: organization._id,
+      name: "Employee",
+      description: "Standard team member",
+    },
+  ]);
+
+  await setRoleResourcePermission({
     tenantId: organization._id,
-    name: "Admin",
-    description: "Organization administrator",
-    fullAccess: true,
-    isSystem: true,
+    roleId: managerRole._id,
+    resourceKey: "employee",
+    actions: ["read", "write"],
+  });
+  await setRoleResourcePermission({
+    tenantId: organization._id,
+    roleId: employeeRole._id,
+    resourceKey: "employee",
+    actions: ["read"],
   });
 
-  return { organization, adminRole };
+  const department = await Department.create({
+    tenantId: organization._id,
+    name: String(topLevelDepartmentName || "Leadership").trim() || "Leadership",
+  });
+
+  return { organization, adminRole, managerRole, employeeRole, department };
 }
 
-async function createOrgAdmin({ organization, adminRole, username, email, password }) {
+async function createOrgAdmin({
+  organization,
+  adminRole,
+  department,
+  username,
+  email,
+  password,
+}) {
   if (!username || !email || !password) {
     const err = new Error("Admin username, email, and password are required");
     err.status = 400;
@@ -60,6 +107,7 @@ async function createOrgAdmin({ organization, adminRole, username, email, passwo
     username,
     email,
     password: hash,
+    departmentId: department._id,
     roleIds: [adminRole._id],
   });
 

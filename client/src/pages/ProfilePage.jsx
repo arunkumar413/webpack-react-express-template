@@ -359,7 +359,11 @@ export function ProfilePage() {
                 (grant.actions || []).includes("write")
               );
             })) && (
-            <InviteTeam departmentName={employee.departmentName} />
+            <InviteTeam
+              departmentName={employee.departmentName}
+              departmentId={employee.departmentId}
+              departments={departments}
+            />
           )}
 
         {employee && GrantAccess.canManageAccess(access) && <GrantAccess />}

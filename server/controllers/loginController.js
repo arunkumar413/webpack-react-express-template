@@ -46,7 +46,13 @@ function saveSessionUser(req, sessionUser, res, status, payload) {
 }
 
 module.exports.registerController = async function (req, res) {
-  const { username, email, password, organizationName } = req.body;
+  const {
+    username,
+    email,
+    password,
+    organizationName,
+    topLevelDepartmentName,
+  } = req.body;
 
   if (!username || !email || !password) {
     return res.status(400).json({
@@ -59,12 +65,14 @@ module.exports.registerController = async function (req, res) {
   try {
     const { organization, adminRole } = await provisionOrganization({
       name: orgName,
+      topLevelDepartmentName,
       allowSlugCollision: true,
     });
 
     const employee = await createOrgAdmin({
       organization,
       adminRole,
+      department,
       username,
       email,
       password,

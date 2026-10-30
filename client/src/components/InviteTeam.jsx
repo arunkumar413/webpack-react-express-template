@@ -68,7 +68,7 @@ export function parseInviteCsv(text) {
   return { rows, error: "" };
 }
 
-export function InviteTeam({ departmentName }) {
+export function InviteTeam({ departmentName, departmentId, departments = [] }) {
   const activeReader = useRef(null);
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState([]);
@@ -76,6 +76,8 @@ export function InviteTeam({ departmentName }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [sending, setSending] = useState(false);
+  const [targetDepartmentId, setTargetDepartmentId] = useState(departmentId || "");
+  const [roleName, setRoleName] = useState("Employee");
   const dispatch = useDispatch();
   const inviteResponse = useSelector((state) => selectApiResponse(state, "inviteTeam"));
   const storedResult = inviteResponse.data;
@@ -144,7 +146,11 @@ export function InviteTeam({ departmentName }) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows }),
+        body: JSON.stringify({
+          rows,
+          departmentId: targetDepartmentId || departmentId,
+          roleName,
+        }),
       });
       if (!result.response.ok) {
         setError(result.payload.statusMessage || "Unable to invite teammates.");
@@ -170,6 +176,42 @@ export function InviteTeam({ departmentName }) {
         </span>
         . They will report to you and receive an invite code to set a password.
       </p>
+
+      <div className="mb-5 grid gap-4 sm:grid-cols-2">
+        <label className="block text-sm">
+          <span className="font-medium text-slate-700">Department</span>
+          <select
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900"
+            value={targetDepartmentId || departmentId || ""}
+            onChange={(evt) => setTargetDepartmentId(evt.target.value)}
+          >
+            {departments.length === 0 && (
+              <option value={departmentId || ""}>{departmentName || "Your department"}</option>
+            )}
+            {departments.map(function (department) {
+              return (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              );
+            })}
+          </select>
+          <span className="mt-1 block text-xs text-slate-400">
+            Managers can choose their department or a child department.
+          </span>
+        </label>
+        <label className="block text-sm">
+          <span className="font-medium text-slate-700">Access level</span>
+          <select
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900"
+            value={roleName}
+            onChange={(evt) => setRoleName(evt.target.value)}
+          >
+            <option value="Employee">Employee</option>
+            <option value="Manager">Manager (can invite)</option>
+          </select>
+        </label>
+      </div>
 
       {notice && (
         <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">

@@ -4,6 +4,7 @@ const Employee = require("../models/Employee");
 const Role = require("../models/Role");
 const RoleAssignment = require("../models/RoleAssignment");
 const Organization = require("../models/Organization");
+const Department = require("../models/Department");
 const PasswordOtp = require("../models/PasswordOtp");
 const { sendMail, smtpConfigured } = require("../utils/mailer");
 const { hashOtp, otpMatches, generateOtp, maskEmail } = require("../utils/otp");
@@ -95,6 +96,8 @@ module.exports.bulkInviteEmployees = async function (req, res) {
     const tenantId = req.session.user.tenantId;
     const actorId = req.session.user.id;
     const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+    const requestedDepartmentId = String(req.body.departmentId || "").trim();
+    const requestedRoleName = String(req.body.roleName || "Employee").trim();
 
     if (rows.length === 0) {
       return res.status(400).json({ statusMessage: "Upload at least one row" });
@@ -120,13 +123,39 @@ module.exports.bulkInviteEmployees = async function (req, res) {
       });
     }
 
+    if (!["Employee", "Manager"].includes(requestedRoleName)) {
+      return res.status(400).json({
+        statusMessage: "Invite role must be Employee or Manager",
+      });
+    }
+
     const employeeRole = await Role.findOne({
       tenantId,
-      name: "Employee",
+      name: requestedRoleName,
     });
     if (!employeeRole) {
       return res.status(400).json({
         statusMessage: "Employee role is not set up for this organization",
+      });
+    }
+
+    const departmentQuery = {
+      tenantId,
+      ...(requestedDepartmentId
+        ? { _id: requestedDepartmentId }
+        : { _id: actor.departmentId }),
+    };
+    if (!req.session.user.fullAccess && requestedDepartmentId) {
+      departmentQuery.$or = [
+        { _id: actor.departmentId },
+        { ancestors: actor.departmentId },
+      ];
+    }
+    const targetDepartment = await Department.findOne(departmentQuery).lean();
+    if (!targetDepartment) {
+      return res.status(403).json({
+        statusMessage:
+          "You can invite only into your department or one of its child departments",
       });
     }
 
@@ -187,7 +216,7 @@ module.exports.bulkInviteEmployees = async function (req, res) {
         designation: row.designation,
         phone: row.phone,
         password,
-        departmentId: actor.departmentId,
+        departmentId: targetDepartment._id,
         managerId: actor._id,
         roleIds: [employeeRole._id],
         mustSetPassword: true,
@@ -220,8 +249,9 @@ module.exports.bulkInviteEmployees = async function (req, res) {
               organization?.name || "your department"
             }`,
       data: {
-        departmentId: actor.departmentId.toString(),
+        departmentId: targetDepartment._id.toString(),
         managerId: actor._id.toString(),
+        roleName: employeeRole.name,
         created,
         errors,
       },
