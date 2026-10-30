@@ -57,6 +57,30 @@ A simple template to run webpack,react and express server.
 
 Optional: `client/.env` can set `REACT_APP_API_URL` (defaults to `/api`).
 
+## Demo seed accounts
+
+Run `npm run seed:demo` to recreate the demo `Acme Corp` organization. The
+script resets the existing `acme` organization before seeding it, and all demo
+accounts use the password `demo123`.
+
+| Role | Name | Email | Department |
+| --- | --- | --- | --- |
+| Admin | Ava Chen | `ava.chen@acme.example` | Leadership |
+| Manager | Marcus Webb | `marcus.webb@acme.example` | Engineering |
+| Manager | Priya Shah | `priya.shah@acme.example` | Backend |
+| Employee | Liam Ortiz | `liam.ortiz@acme.example` | Backend |
+| Manager | Sofia Berg | `sofia.berg@acme.example` | Frontend |
+| Employee | Noah Kim | `noah.kim@acme.example` | Frontend |
+| Employee | Elena Rossi | `elena.rossi@acme.example` | QA |
+| Manager | Jordan Hale | `jordan.hale@acme.example` | Product |
+| HR | Sam Okonkwo | `sam.okonkwo@acme.example` | People |
+
+Use organization slug `acme` when signing in if the email belongs to more than
+one organization. Admins have full access. Managers and HR users with the
+`employee.write` permission can invite teammates from `/profile`; invitees can
+be assigned to an existing department and can be given either Employee or
+Manager access.
+
 `npm run build` from the project root builds the client for production. Then `NODE_ENV=production npm start` serves the UI and API together.
 
 ## Calling an API and storing its response in Redux
@@ -167,7 +191,7 @@ MONGODB_URI=mongodb://127.0.0.1:27017/rbac
 
 **Department** — `tenantId`, `name`, optional `parentId`, `ancestors` (filled on save). Index `{ tenantId, parentId }`.
 
-**Employee** — login identity and org member. `tenantId`, `name`, unique `{ tenantId, username }` and `{ tenantId, email }`, `designation`, `phone`, hashed `password`, `departmentId`, `managerId`, `ancestorManagers`, `roleIds`, `isActive`, `mustSetPassword`. Sessions store this employee (without password) plus `roles`, `roleIds`, and `fullAccess`. Resource grants are looked up per request, not stored as a giant permission list. The signed-in employee’s details and org hierarchy are on `/profile` (`GET`/`PATCH /api/profile`). Department can only be changed by that employee’s manager chain (`PATCH /api/employees/:id/department`). Managers (and HR in a department) with `employee.write` can bulk-invite from `/profile`: `POST /api/employees/invite` with `{ rows: [{ name, email, designation }] }`. New people always join the uploader’s department and report to the uploader. Invitees set a password at `/invite` (`POST /api/invite/accept`).
+**Employee** — login identity and org member. `tenantId`, `name`, unique `{ tenantId, username }` and `{ tenantId, email }`, `designation`, `phone`, hashed `password`, `departmentId`, `managerId`, `ancestorManagers`, `roleIds`, `isActive`, `mustSetPassword`. Sessions store this employee (without password) plus `roles`, `roleIds`, and `fullAccess`. Resource grants are looked up per request, not stored as a giant permission list. The signed-in employee’s details and org hierarchy are on `/profile` (`GET`/`PATCH /api/profile`). Department can only be changed by that employee’s manager chain (`PATCH /api/employees/:id/department`). Managers (and HR in a department) with `employee.write` can bulk-invite from `/profile`: `POST /api/employees/invite` with `{ rows, departmentId, roleName }`. Invitations can target the uploader’s department or a child department, and the invitee reports to the uploader. Invitees set a password at `/invite` (`POST /api/invite/accept`).
 
 **AuthSession** — one record per device login (`sessionId`, `employeeId`, `userAgent`, `ip`, `lastSeenAt`, `expiresAt`). Concurrent logins from different devices stay active; `/profile` lists them.
 
@@ -183,7 +207,7 @@ MONGODB_URI=mongodb://127.0.0.1:27017/rbac
 
 **Todo** — `title`, `description`, `status` (`Pending` | `Done` | `In progress`), `tenantId`, `employee` (Employee ref).
 
-Auth: `POST /api/register` creates an organization, an Admin role with full resource access, and the first employee, then saves an Express session in MongoDB. `POST /api/login` accepts `email`, `password`, and optional `organizationSlug`. Each login creates (or updates) its own session so multiple devices can stay signed in at once. Change password on `/profile`: `POST /api/profile/password/otp` emails a 6-digit code, then `POST /api/profile/password` with `otp`, `password`, and `confirmPassword`. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM` (or `SMTP_URL`) to send mail; without SMTP the code is written to the server log. Protected routes use session cookies plus `checkAuthentication` / `checkAuthorization({ resource, action })`. `GET /api/resources` lists the catalog with pagination (`page`, `limit`, `q`).
+Auth: `POST /api/register` creates an organization, a top-level department, Admin/Manager/Employee roles, and the first Admin employee, then saves an Express session in MongoDB. `POST /api/login` accepts `email`, `password`, and optional `organizationSlug`. Each login creates (or updates) its own session so multiple devices can stay signed in at once. Change password on `/profile`: `POST /api/profile/password/otp` emails a 6-digit code, then `POST /api/profile/password` with `otp`, `password`, and `confirmPassword`. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM` (or `SMTP_URL`) to send mail; without SMTP the code is written to the server log. Protected routes use session cookies plus `checkAuthentication` / `checkAuthorization({ resource, action })`. `GET /api/resources` lists the catalog with pagination (`page`, `limit`, `q`).
 
 ## UI theme
 
